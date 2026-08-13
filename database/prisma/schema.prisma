@@ -1,0 +1,1053 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Identity, RBAC, sessions
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id                    String    @id @default(cuid())
+  email                 String    @unique
+  emailVerifiedAt       DateTime?
+  passwordHash          String?
+  name                  String?
+  displayName           String?
+  avatarUrl             String?
+  locale                String    @default("en")
+  timezone              String    @default("UTC")
+  theme                 String    @default("system")
+  status                String    @default("ACTIVE") // ACTIVE | SUSPENDED | BANNED | DELETED
+  totpSecretEnc         String?
+  totpEnabled           Boolean   @default(false)
+  referralCode          String    @unique
+  referredById          String?
+  country               String?
+  notesInternal         String?
+  lastLoginAt           DateTime?
+  lastLoginIp           String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
+
+  referredBy            User?     @relation("UserReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referralsMade         User[]    @relation("UserReferrals")
+  roles                 UserRole[]
+  sessions              Session[]
+  oauthAccounts         OAuthAccount[]
+  recoveryCodes         RecoveryCode[]
+  apiKeys               ApiKey[]
+  mailboxes             TemporaryMailbox[]
+  aliases               Alias[]
+  favorites             MailboxFavorite[]
+  subscriptions         Subscription[]
+  payments              Payment[]
+  couponsRedeemed       CouponRedemption[]
+  referrals             Referral[] @relation("Referrer")
+  referredRecords       Referral[] @relation("Referee")
+  webhooks              Webhook[]
+  notifications         Notification[]
+  tickets               SupportTicket[]
+  ticketReplies         TicketReply[]
+  abuseReports          AbuseReport[]
+  auditLogs             AuditLog[] @relation("AuditActor")
+  securityEvents        SecurityEvent[]
+  activityLogs          ActivityLog[]
+  forwardingAddresses   ForwardingAddress[]
+  blockedSenders        BlockedSender[]
+  serviceInstances      ServiceInstance[]
+  manualPayments        ManualPayment[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([referredById])
+}
+
+model Role {
+  id          String           @id @default(cuid())
+  key         String           @unique // SUPER_ADMIN | ADMIN | MODERATOR | SUPPORT | ANALYST | USER
+  name        String
+  description String?
+  isSystem    Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  permissions RolePermission[]
+  users       UserRole[]
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique // e.g. admin.users.suspend
+  group       String
+  description String?
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+  assignedBy String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model Session {
+  id               String    @id @default(cuid())
+  userId           String
+  tokenHash        String    @unique
+  userAgent        String?
+  ip               String?
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime
+  lastSeenAt       DateTime  @default(now())
+  revokedAt        DateTime?
+  rotatedFromId    String?
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  accessTokenEnc    String?
+  refreshTokenEnc   String?
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model RecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  metaJson  String   @default("{}")
+  ip        String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Services (platform abstraction)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Service {
+  id          String            @id @default(cuid())
+  key         String            @unique // temp_email | temp_sms | file_drop | burner_link | ...
+  name        String
+  description String?
+  enabled     Boolean           @default(true)
+  icon        String?
+  href        String?
+  sortOrder   Int               @default(0)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  instances   ServiceInstance[]
+}
+
+model ServiceInstance {
+  id          String    @id @default(cuid())
+  serviceId   String
+  userId      String?
+  guestKey    String?
+  status      String    @default("ACTIVE") // ACTIVE | PAUSED | EXPIRED | PURGED
+  metadata    String    @default("{}")
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  service     Service   @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  mailbox     TemporaryMailbox?
+  smsNumber   SmsNumber?
+
+  @@index([serviceId, status])
+  @@index([userId])
+  @@index([guestKey])
+  @@index([expiresAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Temporary email
+// ─────────────────────────────────────────────────────────────────────────────
+
+model EmailDomain {
+  id              String              @id @default(cuid())
+  domain          String              @unique
+  displayName     String?
+  status          String              @default("ACTIVE") // ACTIVE | DEGRADED | DISABLED
+  eligibility     String              @default("FREE") // FREE | PREMIUM_ONLY | BUSINESS_ONLY
+  mxRequired      Boolean             @default(true)
+  mxOk            Boolean             @default(false)
+  weight          Int                 @default(100)
+  lastHealthAt    DateTime?
+  lastHealthNote  String?
+  catchAll        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  mailboxes       TemporaryMailbox[]
+  aliases         Alias[]
+}
+
+model EmailProvider {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  name          String
+  adapter       String // mailgun | postmark | smtp | mock
+  enabled       Boolean  @default(false)
+  isDefault     Boolean  @default(false)
+  configJson    String   @default("{}")
+  healthStatus  String   @default("UNKNOWN") // HEALTHY | DEGRADED | DOWN | UNKNOWN
+  lastHealthAt  DateTime?
+  lastError     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TemporaryMailbox {
+  id                String           @id @default(cuid())
+  serviceInstanceId String           @unique
+  address           String           @unique
+  localPart         String
+  domainId          String
+  userId            String?
+  accessTokenHash   String
+  publicToken       String           @unique
+  state             String           @default("ACTIVE") // ACTIVE | EXPIRING_SOON | EXPIRED | PURGED
+  custom            Boolean          @default(false)
+  sandbox           Boolean          @default(false)
+  expiresAt         DateTime
+  lastExtendedAt    DateTime?
+  extensionMinutes  Int              @default(0)
+  messageCount      Int              @default(0)
+  unreadCount       Int              @default(0)
+  lastMessageAt     DateTime?
+  createdIp         String?
+  userAgent         String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  purgedAt          DateTime?
+
+  serviceInstance   ServiceInstance  @relation(fields: [serviceInstanceId], references: [id], onDelete: Cascade)
+  domain            EmailDomain      @relation(fields: [domainId], references: [id], onDelete: Restrict)
+  user              User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  messages          EmailMessage[]
+  events            MailboxEvent[]
+  favorites         MailboxFavorite[]
+
+  @@index([userId, state])
+  @@index([domainId])
+  @@index([state, expiresAt])
+  @@index([localPart, domainId])
+  @@index([createdAt])
+}
+
+model MailboxEvent {
+  id         String            @id @default(cuid())
+  mailboxId  String
+  fromState  String?
+  toState    String
+  reason     String?
+  createdAt  DateTime          @default(now())
+  mailbox    TemporaryMailbox  @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  @@index([mailboxId, createdAt])
+}
+
+model MailboxFavorite {
+  id        String            @id @default(cuid())
+  userId    String
+  mailboxId String
+  createdAt DateTime          @default(now())
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mailbox   TemporaryMailbox  @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, mailboxId])
+}
+
+model EmailMessage {
+  id              String            @id @default(cuid())
+  mailboxId       String
+  providerId      String?
+  idempotencyKey  String            @unique
+  fromAddress     String
+  fromName        String?
+  toAddress       String
+  subject         String            @default("(no subject)")
+  snippet         String            @default("")
+  textBody        String            @default("")
+  htmlRaw         String            @default("")
+  htmlSafe        String            @default("")
+  headersJson     String            @default("{}")
+  sizeBytes       Int               @default(0)
+  spamScore       Float             @default(0)
+  spamFlag        Boolean           @default(false)
+  read            Boolean           @default(false)
+  starred         Boolean           @default(false)
+  hasAttachments  Boolean           @default(false)
+  receivedAt      DateTime          @default(now())
+  deletedAt       DateTime?
+  purgedAt        DateTime?
+  createdAt       DateTime          @default(now())
+
+  mailbox         TemporaryMailbox  @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+  attachments     EmailAttachment[]
+
+  @@index([mailboxId, receivedAt])
+  @@index([mailboxId, read])
+  @@index([fromAddress])
+  @@index([deletedAt])
+}
+
+model EmailAttachment {
+  id            String        @id @default(cuid())
+  messageId     String
+  filename      String
+  mimeType      String
+  sizeBytes     Int
+  storageKey    String
+  checksum      String
+  blocked       Boolean       @default(false)
+  blockReason   String?
+  scanStatus    String        @default("PENDING") // PENDING | CLEAN | INFECTED | SKIPPED | FAILED
+  scanResult    String?
+  createdAt     DateTime      @default(now())
+  expiresAt     DateTime?
+  purgedAt      DateTime?
+  message       EmailMessage  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+  @@index([expiresAt])
+}
+
+model Alias {
+  id              String             @id @default(cuid())
+  userId          String
+  domainId        String
+  address         String             @unique
+  localPart       String
+  label           String?
+  status          String             @default("ACTIVE") // ACTIVE | PAUSED | DELETED
+  forwardToId     String?
+  messagesReceived Int               @default(0)
+  lastActivityAt  DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain          EmailDomain        @relation(fields: [domainId], references: [id], onDelete: Restrict)
+  forwardTo       ForwardingAddress? @relation(fields: [forwardToId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([domainId])
+}
+
+model ForwardingAddress {
+  id           String    @id @default(cuid())
+  userId       String
+  email        String
+  verifiedAt   DateTime?
+  verifyToken  String?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aliases      Alias[]
+
+  @@unique([userId, email])
+}
+
+model BlockedSender {
+  id        String   @id @default(cuid())
+  userId    String?
+  mailboxId String?
+  pattern   String
+  kind      String   @default("ADDRESS") // ADDRESS | DOMAIN
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([mailboxId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SMS
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SmsProvider {
+  id           String      @id @default(cuid())
+  key          String      @unique
+  name         String
+  adapter      String // twilio | vonage | mock
+  enabled      Boolean     @default(false)
+  isDefault    Boolean     @default(false)
+  configJson   String      @default("{}")
+  healthStatus String      @default("UNKNOWN")
+  lastHealthAt DateTime?
+  lastError    String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  numbers      SmsNumber[]
+}
+
+model SmsNumber {
+  id                String           @id @default(cuid())
+  serviceInstanceId String           @unique
+  providerId        String
+  e164              String
+  country           String
+  userId            String?
+  guestKey          String?
+  status            String           @default("ACTIVE") // ACTIVE | RELEASED | EXPIRED
+  expiresAt         DateTime
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  serviceInstance   ServiceInstance  @relation(fields: [serviceInstanceId], references: [id], onDelete: Cascade)
+  provider          SmsProvider      @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  messages          SmsMessage[]
+
+  @@index([status, expiresAt])
+  @@index([country, status])
+  @@index([e164])
+}
+
+model SmsMessage {
+  id             String     @id @default(cuid())
+  numberId       String
+  fromNumber     String
+  body           String
+  receivedAt     DateTime   @default(now())
+  read           Boolean    @default(false)
+  idempotencyKey String     @unique
+  providerMeta   String     @default("{}")
+  number         SmsNumber  @relation(fields: [numberId], references: [id], onDelete: Cascade)
+
+  @@index([numberId, receivedAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plans, billing, payments
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Plan {
+  id            String         @id @default(cuid())
+  key           String         @unique // FREE | PRO | DEVELOPER | BUSINESS
+  name          String
+  description   String?
+  highlight     String?
+  sortOrder     Int            @default(0)
+  isPublic      Boolean        @default(true)
+  isDefault     Boolean        @default(false)
+  lifetime      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  prices        PlanPrice[]
+  limits        PlanLimit[]
+  subscriptions Subscription[]
+}
+
+model PlanPrice {
+  id         String   @id @default(cuid())
+  planId     String
+  currency   String
+  interval   String // month | year | lifetime
+  amountCents Int
+  stripePriceId String?
+  active     Boolean  @default(true)
+  plan       Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, currency, interval])
+  @@index([currency])
+}
+
+model PlanLimit {
+  id      String @id @default(cuid())
+  planId  String
+  key     String
+  value   String
+  plan    Plan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, key])
+}
+
+model Subscription {
+  id                   String    @id @default(cuid())
+  userId               String
+  planId               String
+  status               String    @default("TRIALING") // TRIALING | ACTIVE | PAST_DUE | CANCELED | EXPIRED
+  interval             String    @default("month")
+  currency             String    @default("USD")
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean   @default(false)
+  canceledAt           DateTime?
+  trialEndsAt          DateTime?
+  provider             String    @default("manual")
+  providerSubscriptionId String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  plan                 Plan      @relation(fields: [planId], references: [id], onDelete: Restrict)
+  payments             Payment[]
+
+  @@index([userId, status])
+  @@index([planId])
+  @@index([status, currentPeriodEnd])
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  userId            String
+  subscriptionId    String?
+  provider          String
+  providerPaymentId String?
+  amountCents       Int
+  currency          String
+  status            String        @default("PENDING") // PENDING | SUCCEEDED | FAILED | REFUNDED | CANCELED
+  description       String?
+  rawJson           String        @default("{}")
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  user              User          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  manual            ManualPayment?
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@index([providerPaymentId])
+}
+
+model ManualPayment {
+  id              String   @id @default(cuid())
+  paymentId       String   @unique
+  userId          String
+  method          String // bank_transfer | jazzcash | easypaisa | other
+  transactionId   String
+  screenshotKey   String?
+  adminStatus     String   @default("PENDING") // PENDING | APPROVED | REJECTED | NEEDS_INFO
+  adminNote       String?
+  reviewerId      String?
+  reviewedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  payment         Payment  @relation(fields: [paymentId], references: [id], onDelete: Restrict)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([adminStatus, createdAt])
+}
+
+model Coupon {
+  id            String             @id @default(cuid())
+  code          String             @unique
+  description   String?
+  percentOff    Int?
+  amountOffCents Int?
+  currency      String?
+  maxRedemptions Int?
+  redeemedCount Int                @default(0)
+  validFrom     DateTime?
+  validUntil    DateTime?
+  planKey       String?
+  active        Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  redemptions   CouponRedemption[]
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  userId    String
+  createdAt DateTime @default(now())
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([couponId, userId])
+}
+
+model Referral {
+  id           String    @id @default(cuid())
+  referrerId   String
+  refereeId    String    @unique
+  rewardCents  Int       @default(0)
+  status       String    @default("PENDING") // PENDING | QUALIFIED | PAID | BLOCKED
+  createdAt    DateTime  @default(now())
+  referrer     User      @relation("Referrer", fields: [referrerId], references: [id], onDelete: Restrict)
+  referee      User      @relation("Referee", fields: [refereeId], references: [id], onDelete: Restrict)
+
+  @@index([referrerId])
+}
+
+model Currency {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String
+  symbol      String
+  enabled     Boolean @default(true)
+  isDefault   Boolean @default(false)
+  localeHint  String?
+  sortOrder   Int     @default(0)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// API platform
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id              String      @id @default(cuid())
+  userId          String
+  name            String
+  prefix          String
+  keyHash         String      @unique
+  lastFour        String
+  mode            String      @default("live") // live | test
+  scopesJson      String      @default("[\"mailboxes:read\",\"mailboxes:write\",\"messages:read\"]")
+  rateLimitRpm    Int         @default(60)
+  revokedAt       DateTime?
+  expiresAt       DateTime?
+  lastUsedAt      DateTime?
+  graceUntil      DateTime?
+  rotatedFromId   String?
+  createdAt       DateTime    @default(now())
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usage           ApiUsage[]
+
+  @@index([userId])
+  @@index([prefix])
+}
+
+model ApiUsage {
+  id           String   @id @default(cuid())
+  apiKeyId     String
+  day          String
+  requests     Int      @default(0)
+  errors       Int      @default(0)
+  bytesOut     Int      @default(0)
+  lastPath     String?
+  updatedAt    DateTime @updatedAt
+  apiKey       ApiKey   @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@unique([apiKeyId, day])
+}
+
+model ApiRequestLog {
+  id            String   @id @default(cuid())
+  correlationId String
+  apiKeyId      String?
+  method        String
+  path          String
+  status        Int
+  durationMs    Int
+  ip            String?
+  errorCode     String?
+  createdAt     DateTime @default(now())
+
+  @@index([apiKeyId, createdAt])
+  @@index([correlationId])
+  @@index([createdAt])
+}
+
+model Webhook {
+  id          String             @id @default(cuid())
+  userId      String
+  url         String
+  secretHash  String
+  eventsJson  String             @default("[\"message.received\"]")
+  active      Boolean            @default(true)
+  sandbox     Boolean            @default(false)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries  WebhookDelivery[]
+
+  @@index([userId, active])
+}
+
+model WebhookDelivery {
+  id           String   @id @default(cuid())
+  webhookId    String
+  event        String
+  payloadJson  String
+  status       String   @default("PENDING") // PENDING | SUCCESS | FAILED
+  attempts     Int      @default(0)
+  lastStatus   Int?
+  lastError    String?
+  nextRetryAt  DateTime?
+  createdAt    DateTime @default(now())
+  webhook      Webhook  @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, createdAt])
+  @@index([status, nextRetryAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Advertising
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AdNetwork {
+  id         String        @id @default(cuid())
+  key        String        @unique
+  name       String
+  adapter    String
+  enabled    Boolean       @default(false)
+  configJson String        @default("{}")
+  createdAt  DateTime      @default(now())
+  placements AdPlacement[]
+}
+
+model AdPlacement {
+  id             String         @id @default(cuid())
+  networkId      String
+  key            String         @unique
+  zone           String // header | sidebar | infeed | footer | interstitial
+  slotId         String?
+  devicesJson    String         @default("[\"desktop\",\"mobile\"]")
+  countriesJson  String         @default("[]")
+  activeFrom     DateTime?
+  activeTo       DateTime?
+  priority       Int            @default(0)
+  frequencyCap   Int?
+  excludePremium Boolean        @default(true)
+  abBucket       String?
+  enabled        Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  network        AdNetwork      @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  impressions    AdImpression[]
+  clicks         AdClick[]
+}
+
+model AdImpression {
+  id          String      @id @default(cuid())
+  placementId String
+  day         String
+  count       Int         @default(0)
+  estimatedCents Int      @default(0)
+  placement   AdPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@unique([placementId, day])
+}
+
+model AdClick {
+  id          String      @id @default(cuid())
+  placementId String
+  day         String
+  count       Int         @default(0)
+  placement   AdPlacement @relation(fields: [placementId], references: [id], onDelete: Cascade)
+
+  @@unique([placementId, day])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CMS, blog, SEO, i18n
+// ─────────────────────────────────────────────────────────────────────────────
+
+model BlogCategory {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  name        String
+  description String?
+  posts       BlogPost[]
+}
+
+model BlogTag {
+  id    String        @id @default(cuid())
+  slug  String        @unique
+  name  String
+  posts BlogPostTag[]
+}
+
+model BlogPost {
+  id              String        @id @default(cuid())
+  slug            String        @unique
+  title           String
+  excerpt         String        @default("")
+  contentMd       String        @default("")
+  contentHtml     String        @default("")
+  coverImage      String?
+  authorName      String        @default("Haven Editorial")
+  status          String        @default("DRAFT") // DRAFT | SCHEDULED | PUBLISHED
+  publishedAt     DateTime?
+  seoTitle        String?
+  seoDescription  String?
+  categoryId      String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  category        BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags            BlogPostTag[]
+
+  @@index([status, publishedAt])
+}
+
+model BlogPostTag {
+  postId String
+  tagId  String
+  post   BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    BlogTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  category  String   @default("general")
+  sortOrder Int      @default(0)
+  locale    String   @default("en")
+  published Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model Page {
+  id             String   @id @default(cuid())
+  slug           String   @unique
+  title          String
+  contentMd      String   @default("")
+  contentHtml    String   @default("")
+  seoTitle       String?
+  seoDescription String?
+  published      Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
+}
+
+model Announcement {
+  id         String    @id @default(cuid())
+  kind       String    @default("INFO") // INFO | WARNING | SUCCESS | MAINTENANCE | PROMOTION
+  title      String
+  body       String
+  href       String?
+  audience   String    @default("ALL") // ALL | ANON | AUTH | PLAN:PRO ...
+  countries  String    @default("[]")
+  devices    String    @default("[]")
+  activeFrom DateTime?
+  activeTo   DateTime?
+  dismissible Boolean  @default(true)
+  enabled    Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+}
+
+model Translation {
+  id        String @id @default(cuid())
+  locale    String
+  namespace String
+  key       String
+  value     String
+
+  @@unique([locale, namespace, key])
+  @@index([locale, namespace])
+}
+
+model SeoEntry {
+  id          String  @id @default(cuid())
+  path        String  @unique
+  title       String
+  description String
+  ogImage     String?
+  noindex     Boolean @default(false)
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Support, abuse, notifications
+// ─────────────────────────────────────────────────────────────────────────────
+
+model SupportTicket {
+  id         String        @id @default(cuid())
+  userId     String?
+  email      String
+  subject    String
+  status     String        @default("OPEN") // OPEN | IN_PROGRESS | WAITING | RESOLVED | CLOSED
+  priority   String        @default("NORMAL")
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  user       User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  replies    TicketReply[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model TicketReply {
+  id        String        @id @default(cuid())
+  ticketId  String
+  userId    String?
+  author    String
+  body      String
+  staff     Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  user      User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model AbuseReport {
+  id          String    @id @default(cuid())
+  userId      String?
+  mailboxId   String?
+  messageId   String?
+  reporterIp  String?
+  category    String
+  details     String
+  status      String    @default("OPEN") // OPEN | REVIEWING | RESOLVED | DISMISSED
+  resolution  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Security, settings, flags, rate limits, analytics
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actorEmail String?
+  action     String
+  targetType String
+  targetId   String?
+  beforeJson String   @default("{}")
+  afterJson  String   @default("{}")
+  ip         String?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([targetType, targetId])
+  @@index([actorId])
+}
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  type      String
+  ip        String?
+  userAgent String?
+  metaJson  String   @default("{}")
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt])
+  @@index([ip, createdAt])
+}
+
+model IpBan {
+  id        String    @id @default(cuid())
+  cidr      String    @unique
+  reason    String
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  group     String   @default("general")
+  type      String   @default("string")
+  updatedAt DateTime @updatedAt
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  enabled     Boolean  @default(true)
+  description String?
+  updatedAt   DateTime @updatedAt
+}
+
+model RateLimitRule {
+  id          String  @id @default(cuid())
+  key         String  @unique
+  scope       String // ip | account | apikey | global
+  limit       Int
+  windowSec   Int
+  burst       Int     @default(0)
+  description String?
+  enabled     Boolean @default(true)
+}
+
+model AnalyticsDaily {
+  id               String @id @default(cuid())
+  day              String @unique
+  visitors         Int    @default(0)
+  mailboxesCreated Int    @default(0)
+  messagesReceived Int    @default(0)
+  signups          Int    @default(0)
+  premiumStarts    Int    @default(0)
+  apiRequests      Int    @default(0)
+  revenueCents     Int    @default(0)
+  adImpressions    Int    @default(0)
+}
+
+model JobRun {
+  id          String    @id @default(cuid())
+  job         String
+  status      String    @default("RUNNING")
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+  resultJson  String    @default("{}")
+  error       String?
+
+  @@index([job, startedAt])
+}
+
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  topic     String
+  message   String
+  ip        String?
+  createdAt DateTime @default(now())
+  handled   Boolean  @default(false)
+}
