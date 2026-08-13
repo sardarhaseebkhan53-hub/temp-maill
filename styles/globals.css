@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Source Sans 3", "Segoe UI", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Outfit", "Avenir Next", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
+    --background: 160 20% 98%;
+    --foreground: 168 24% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 168 24% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 168 24% 10%;
+    --primary: 168 61% 32%;
+    --primary-foreground: 160 30% 98%;
+    --secondary: 160 14% 93%;
+    --secondary-foreground: 168 20% 16%;
+    --muted: 160 12% 94%;
+    --muted-foreground: 168 8% 38%;
+    --accent: 32 92% 56%;
+    --accent-foreground: 24 40% 12%;
+    --destructive: 0 72% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 152 55% 36%;
+    --success-foreground: 150 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 32 50% 12%;
+    --danger: 0 72% 50%;
+    --danger-foreground: 0 0% 98%;
+    --border: 164 12% 88%;
+    --input: 164 12% 88%;
+    --ring: 168 61% 32%;
+    --radius: 0.85rem;
+    --selection: 168 50% 84%;
+  }
+
+  .dark {
+    --background: 168 22% 6%;
+    --foreground: 160 16% 94%;
+    --card: 168 18% 9%;
+    --card-foreground: 160 16% 94%;
+    --popover: 168 18% 9%;
+    --popover-foreground: 160 16% 94%;
+    --primary: 166 48% 52%;
+    --primary-foreground: 168 30% 8%;
+    --secondary: 168 14% 14%;
+    --secondary-foreground: 160 16% 92%;
+    --muted: 168 12% 14%;
+    --muted-foreground: 160 8% 68%;
+    --accent: 32 90% 58%;
+    --accent-foreground: 24 40% 10%;
+    --destructive: 0 62% 48%;
+    --destructive-foreground: 0 0% 98%;
+    --success: 152 45% 48%;
+    --success-foreground: 150 40% 8%;
+    --warning: 38 90% 54%;
+    --warning-foreground: 32 50% 10%;
+    --danger: 0 62% 48%;
+    --danger-foreground: 0 0% 98%;
+    --border: 168 12% 18%;
+    --input: 168 12% 18%;
+    --ring: 166 48% 52%;
+    --selection: 168 30% 22%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  ::selection {
+    background: hsl(var(--selection));
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .reading {
+    max-width: 72rem;
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--card)) 40%,
+      hsl(var(--muted)) 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+}
+
+/* Thin brand scrollbars, still respect OS settings */
+@media (hover: hover) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.35) transparent;
+  }
+}
+
+.prose {
+  @apply max-w-none text-foreground/90 leading-relaxed;
+}
+.prose h1 {
+  @apply font-display text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-4;
+}
+.prose h2 {
+  @apply font-display text-xl font-semibold mt-8 mb-3 text-foreground;
+}
+.prose p {
+  @apply mb-4;
+}
+.prose ul {
+  @apply list-disc pl-5 mb-4 space-y-1;
+}
+.prose a {
+  @apply text-primary underline-offset-4 hover:underline;
+}
+
+@media print {
+  header,
+  nav,
+  footer,
+  .no-print {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+}

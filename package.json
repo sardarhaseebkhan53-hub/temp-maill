@@ -1,0 +1,72 @@
+{
+  "name": "haven",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Haven — temporary email and privacy services platform",
+  "scripts": {
+    "dev": "tsx database/seed/index.ts && next dev -H 0.0.0.0 -p 3000",
+    "dev:next": "next dev -H 0.0.0.0 -p 3000",
+    "build": "next build",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:seed": "tsx database/seed/index.ts",
+    "db:generate": "echo 'Using built-in SQLite adapter; Prisma schema is the source of truth for production Postgres.'",
+    "postinstall": "echo 'Haven ready'"
+  },
+  "prisma": {
+    "schema": "database/prisma/schema.prisma",
+    "seed": "tsx database/seed/index.ts"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.9.1",
+    "@noble/hashes": "^1.7.1",
+    "@prisma/client": "^6.7.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "framer-motion": "^11.18.2",
+    "isomorphic-dompurify": "^2.22.0",
+    "jose": "^6.0.10",
+    "lucide-react": "^0.503.0",
+    "nanoid": "^5.1.5",
+    "next": "^15.3.1",
+    "next-themes": "^0.4.6",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-hook-form": "^7.55.0",
+    "sanitize-html": "^2.16.0",
+    "server-only": "^0.0.1",
+    "sonner": "^2.0.3",
+    "stripe": "^18.0.0",
+    "tailwind-merge": "^2.6.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^22.14.1",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/sanitize-html": "^2.15.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.25.1",
+    "eslint-config-next": "^15.3.1",
+    "jsdom": "^26.1.0",
+    "postcss": "^8.5.3",
+    "prisma": "^6.7.0",
+    "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
