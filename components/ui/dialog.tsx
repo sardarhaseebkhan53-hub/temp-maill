@@ -29,19 +29,19 @@ export function Dialog({
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <button aria-label="Close" className="absolute inset-0 bg-foreground/40 backdrop-blur-[2px]" onClick={onClose} />
+      <button aria-label="Close" className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border bg-card shadow-lift p-6 animate-slide-up max-h-[92vh] overflow-y-auto",
+          "relative z-10 w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl border border-white/10 bg-[#0c1017] shadow-2xl p-6 animate-slide-up max-h-[92vh] overflow-y-auto text-slate-200",
           className,
         )}
       >
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <h2 className="font-display text-lg font-semibold">{title}</h2>
-          <button onClick={onClose} className="rounded-md p-2 hover:bg-muted" aria-label="Close dialog">
+        <div className="flex items-start justify-between gap-4 mb-4 pb-2 border-b border-white/[0.08]">
+          <h2 className="font-display text-base font-bold text-white tracking-tight">{title}</h2>
+          <button onClick={onClose} className="rounded-lg p-1.5 text-slate-400 hover:text-white hover:bg-white/[0.08]" aria-label="Close dialog">
             <X className="size-4" />
           </button>
         </div>

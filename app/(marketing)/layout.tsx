@@ -11,9 +11,11 @@ export default async function MarketingLayout({ children }: { children: React.Re
     orderBy: { createdAt: "desc" },
   });
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-[#06080d] text-slate-200">
       {announcement ? (
-        <div className="bg-primary text-primary-foreground text-sm text-center px-4 py-2">{announcement.body}</div>
+        <div className="bg-emerald-950/70 border-b border-[#00f5a0]/25 text-[#00f5a0] text-xs font-semibold text-center px-4 py-1.5 shadow-sm">
+          {announcement.body}
+        </div>
       ) : null}
       <Navbar user={ctx?.user ?? null} />
       <main className="flex-1">{children}</main>

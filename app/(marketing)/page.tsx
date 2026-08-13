@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { InboxGenerator } from "@/components/features/generator";
+import { FeaturesSidebar } from "@/components/features/features-sidebar";
+import { AdSlot } from "@/components/ads/ad-slot";
+import { Hero3DGraphic } from "@/components/brand/hero-3d-graphic";
+import { Crystal3DIcon, Crown3DIcon, Vault3DIcon } from "@/components/brand/3d-icons";
 import { getOrCreateGuestMailbox, listDomainsForViewer } from "@/server/services/guest-mailbox";
 import { publicStats } from "@/server/services/stats";
 import { listPublicPlans } from "@/server/services/plans";
 import { prisma } from "@/lib/db";
 import { buildMetadata, jsonLd, absoluteUrl } from "@/lib/seo";
 import { formatMoney } from "@/lib/utils";
-import { ShieldCheck, Timer, Sparkles } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 
 export const metadata = buildMetadata({
   title: "Haven — Your Private Inbox. Instantly.",
@@ -24,8 +33,14 @@ export default async function HomePage() {
     prisma.faq.findMany({ where: { published: true, locale: "en" }, orderBy: { sortOrder: "asc" }, take: 4 }),
   ]);
 
+  // Find pricing amounts
+  const proPlan = plans.find((p) => p.key === "PRO");
+  const proPrice = proPlan?.prices.find((x) => x.currency === "USD" && x.interval === "month");
+  const businessPlan = plans.find((p) => p.key === "BUSINESS");
+  const businessPrice = businessPlan?.prices.find((x) => x.currency === "USD" && x.interval === "month");
+
   return (
-    <>
+    <div className="bg-[#06080d] min-h-screen text-slate-200 pb-16 bg-ambient-radial">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={jsonLd({
@@ -53,126 +68,365 @@ export default async function HomePage() {
           ],
         })}
       />
-      <section className="container pt-10 pb-8 md:pt-16">
-        <div className="max-w-3xl">
-          <p className="text-sm font-medium text-primary mb-3">Temporary email, built like a product</p>
-          <h1 className="font-display text-[clamp(2rem,5vw,3.75rem)] leading-[1.08] font-semibold tracking-tight">
-            Your Private Inbox. Instantly.
-          </h1>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-            Create a temporary email address in seconds. No signup. No spam. No unnecessary tracking.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a href="#inbox" className="inline-flex h-12 items-center rounded-lg bg-primary px-5 text-primary-foreground font-medium">
-              Create Temporary Email
-            </a>
-            <Link href="/tools" className="inline-flex h-12 items-center rounded-lg border px-5 font-medium hover:bg-muted">
-              Explore Privacy Tools
-            </Link>
-          </div>
-        </div>
-        <ul className="mt-8 flex flex-wrap gap-4 text-sm">
-          <li className="inline-flex items-center gap-2 rounded-full bg-card border px-3 py-1.5">
-            <Sparkles className="size-4 text-primary" /> No signup required
-          </li>
-          <li className="inline-flex items-center gap-2 rounded-full bg-card border px-3 py-1.5">
-            <Timer className="size-4 text-primary" /> Auto-deletes
-          </li>
-          <li className="inline-flex items-center gap-2 rounded-full bg-card border px-3 py-1.5">
-            <ShieldCheck className="size-4 text-primary" /> HTML sanitized before you see it
-          </li>
-        </ul>
+
+      {/* 1. TOP ADVERTISEMENT BANNER (728 × 90 Leaderboard) */}
+      <section className="max-w-[1560px] mx-auto px-4 pt-4 pb-2" aria-label="Advertisement">
+        <AdSlot placement="top-leaderboard" />
       </section>
 
-      <section id="inbox" className="container pb-16">
-        <InboxGenerator
-          initialMailbox={mailbox}
-          domains={domains.map((d) => ({ id: d.id, domain: d.domain, eligibility: d.eligibility }))}
-        />
-      </section>
+      {/* 2. MAIN DASHBOARD GRID CONTAINER (Max width 1560px, dense layout) */}
+      <main className="max-w-[1560px] mx-auto px-4 pt-3 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_310px] xl:grid-cols-[1fr_330px] gap-6 items-start">
+          
+          {/* LEFT / MAIN COLUMN */}
+          <div className="space-y-6 min-w-0">
+            
+            {/* HERO SECTION */}
+            <section className="relative rounded-2xl border border-white/[0.08] bg-[#0c1017]/90 backdrop-blur-2xl p-6 sm:p-8 shadow-2xl overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-6 items-center">
+                {/* Left Hero Text & CTA */}
+                <div className="space-y-4 max-w-xl">
+                  {/* Eyebrow badge */}
+                  <div className="inline-flex items-center gap-2 rounded-full bg-emerald-950/40 border border-[#00f5a0]/30 px-3.5 py-1 text-xs font-semibold text-[#00f5a0] shadow-[0_0_12px_rgba(0,245,160,0.15)]">
+                    <ShieldCheck className="size-3.5 text-[#00f5a0]" />
+                    <span>Temporary email, built for privacy</span>
+                  </div>
 
-      <section className="container py-12 grid gap-6 md:grid-cols-3">
-        {[
-          ["Land on the page", "An address is created for you automatically. Copy it."],
-          ["Receive mail", "Messages stream in as they are accepted and sanitized."],
-          ["Read and go", "Open what you need. Everything expires on a published schedule."],
-        ].map(([t, b], i) => (
-          <div key={t} className="rounded-2xl border bg-card p-6">
-            <div className="text-xs font-medium text-primary mb-2">Step {i + 1}</div>
-            <h2 className="font-display text-xl font-semibold">{t}</h2>
-            <p className="text-sm text-muted-foreground mt-2">{b}</p>
-          </div>
-        ))}
-      </section>
+                  {/* Headline */}
+                  <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.12]">
+                    Your private inbox.
+                    <span className="block text-[#00f5a0] glow-text-teal">
+                      Instantly.
+                    </span>
+                  </h1>
 
-      <section className="container py-12">
-        <h2 className="font-display text-2xl font-semibold mb-6">Privacy services on one platform</h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            ["/temporary-email", "Temporary email", "Disposable addresses with a real-time inbox."],
-            ["/temporary-phone", "Temporary phone", "Receive SMS for testing and personal privacy."],
-            ["/developer-api", "Developer API", "Provision inboxes from CI, QA, and your own apps."],
-            ["/tools", "Privacy tools", "Breach hints and a browser fingerprint check."],
-          ].map(([href, t, b]) => (
-            <Link key={href} href={href ?? "/"} className="rounded-2xl border bg-card p-5 hover:border-primary/40 transition-colors">
-              <h3 className="font-semibold">{t}</h3>
-              <p className="text-sm text-muted-foreground mt-1">{b}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+                  {/* Subtitle */}
+                  <p className="text-sm sm:text-base text-slate-300 max-w-lg leading-relaxed">
+                    Create a temporary email address in seconds.
+                    <br className="hidden sm:inline" /> No signup. No spam. No tracking.
+                  </p>
 
-      <section className="container py-12">
-        <h2 className="font-display text-2xl font-semibold mb-6">In use</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            [stats.mailboxesCreated, "Inboxes created"],
-            [stats.messagesReceived, "Messages received"],
-            [stats.activeMailboxes, "Active now"],
-            [stats.countriesServed, "Countries represented"],
-          ].map(([n, l]) => (
-            <div key={String(l)} className="rounded-2xl border bg-card p-5">
-              <div className="font-display text-3xl tabular">{Number(n).toLocaleString()}</div>
-              <div className="text-sm text-muted-foreground">{l}</div>
-            </div>
-          ))}
-        </div>
-      </section>
+                  {/* Buttons */}
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <a
+                      href="#inbox"
+                      className="inline-flex items-center gap-2 rounded-xl bg-[#00f5a0] hover:bg-[#00e092] text-[#06090e] font-bold text-xs sm:text-sm px-5 py-3 shadow-[0_0_25px_rgba(0,245,160,0.35)] transition-all active:scale-95"
+                    >
+                      <Zap className="size-4 fill-current" />
+                      <span>Create Temporary Email</span>
+                    </a>
 
-      <section className="container py-12">
-        <div className="flex items-end justify-between mb-6">
-          <h2 className="font-display text-2xl font-semibold">Plans</h2>
-          <Link href="/pricing" className="text-sm text-primary hover:underline">
-            Full pricing
-          </Link>
-        </div>
-        <div className="grid gap-4 md:grid-cols-4">
-          {plans.map((p) => {
-            const price = p.prices.find((x) => x.currency === "USD" && x.interval === "month");
-            return (
-              <div key={p.key} className="rounded-2xl border bg-card p-5">
-                <p className="text-sm text-muted-foreground">{p.name}</p>
-                <p className="font-display text-2xl mt-1">
-                  {p.key === "FREE" ? "Free" : price ? formatMoney(price.amountCents, "USD") : "—"}
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">{p.description}</p>
+                    <Link
+                      href="/tools"
+                      className="inline-flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 text-white font-semibold text-xs sm:text-sm px-5 py-3 transition-all active:scale-95"
+                    >
+                      <span>Explore Privacy Tools</span>
+                      <ChevronRight className="size-4 text-slate-400" />
+                    </Link>
+                  </div>
+
+                  {/* 4 Feature Badges */}
+                  <div className="flex flex-wrap gap-x-4 gap-y-2 pt-3 text-xs text-slate-300 font-medium">
+                    <div className="flex items-center gap-1.5">
+                      <Check className="size-3.5 text-[#00f5a0]" />
+                      <span>No signup required</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Check className="size-3.5 text-[#00f5a0]" />
+                      <span>Auto-deletes</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Check className="size-3.5 text-[#00f5a0]" />
+                      <span>HTML sanitized</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Check className="size-3.5 text-[#00f5a0]" />
+                      <span>Privacy focused</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Hero 3D Futuristic Illustration */}
+                <div className="hidden md:flex items-center justify-center">
+                  <Hero3DGraphic />
+                </div>
               </div>
-            );
-          })}
-        </div>
-      </section>
+            </section>
 
-      <section className="container py-12">
-        <h2 className="font-display text-2xl font-semibold mb-6">Questions</h2>
-        <div className="grid gap-4 md:grid-cols-2">
-          {faqs.map((f) => (
-            <div key={f.id} className="rounded-2xl border bg-card p-5">
-              <h3 className="font-medium">{f.question}</h3>
-              <p className="text-sm text-muted-foreground mt-2">{f.answer}</p>
+            {/* TEMPORARY EMAIL CARD & MAILBOX & READER COMPONENT */}
+            <section id="inbox">
+              <InboxGenerator
+                initialMailbox={mailbox}
+                domains={domains.map((d) => ({ id: d.id, domain: d.domain, eligibility: d.eligibility }))}
+              />
+            </section>
+
+            {/* HOW IT WORKS & PRICING & BOTTOM ADS */}
+            <div className="grid grid-cols-1 lg:grid-cols-[160px_1fr_auto] gap-5 items-stretch">
+              
+              {/* Left 160 × 600 Wide Skyscraper Ad (Desktop) */}
+              <div className="hidden xl:flex justify-start">
+                <AdSlot placement="sidebar" />
+              </div>
+
+              {/* Center Column: How It Works & Pricing Cards */}
+              <div className="space-y-6 min-w-0 flex-1">
+                
+                {/* HOW IT WORKS SECTION */}
+                <section className="rounded-2xl border border-white/[0.08] bg-[#0c1017]/95 backdrop-blur-xl p-5 sm:p-6 shadow-xl">
+                  <div className="mb-4">
+                    <h2 className="font-display text-lg font-bold text-white tracking-tight">
+                      How it works
+                    </h2>
+                    <p className="text-xs text-slate-400">Private email in 3 simple steps</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center relative">
+                    {/* Step 1 */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <div className="size-9 rounded-full bg-[#00f5a0]/15 border border-[#00f5a0]/30 text-[#00f5a0] font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(0,245,160,0.2)]">
+                        01
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-bold text-white">Get an address</h3>
+                        <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                          We generate a random email address for you.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 2 */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <div className="size-9 rounded-full bg-[#00f5a0]/15 border border-[#00f5a0]/30 text-[#00f5a0] font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(0,245,160,0.2)]">
+                        02
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-bold text-white">Receive emails</h3>
+                        <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                          Emails sent to your address appear instantly.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Step 3 */}
+                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                      <div className="size-9 rounded-full bg-[#00f5a0]/15 border border-[#00f5a0]/30 text-[#00f5a0] font-mono font-bold text-xs flex items-center justify-center shrink-0 shadow-[0_0_10px_rgba(0,245,160,0.2)]">
+                        03
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-xs font-bold text-white">Read & it&apos;s gone</h3>
+                        <p className="text-[11px] text-slate-400 leading-tight mt-0.5">
+                          Read safely. Everything expires automatically.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* PRICING SECTION */}
+                <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* FREE PLAN */}
+                  <div className="relative rounded-2xl border border-white/[0.08] bg-[#0c1017]/95 backdrop-blur-xl p-5 shadow-xl flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <h3 className="font-display text-sm font-bold text-white">Free</h3>
+                          <div className="font-display text-2xl font-extrabold text-white mt-1">
+                            $0 <span className="text-xs font-normal text-slate-400">/forever</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">Basic features for everyone.</p>
+                        </div>
+                        <Crystal3DIcon className="shrink-0 scale-90" />
+                      </div>
+
+                      <ul className="mt-3 space-y-1.5 text-xs text-slate-300">
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-[#00f5a0]" />
+                          <span>Temporary email</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-[#00f5a0]" />
+                          <span>Auto expiry</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-[#00f5a0]" />
+                          <span>Standard domains</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <a
+                      href="#inbox"
+                      className="block w-full text-center rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-white font-bold text-xs py-2 mt-4 transition-colors"
+                    >
+                      Use Free
+                    </a>
+                  </div>
+
+                  {/* PRO PLAN (MOST POPULAR) */}
+                  <div className="relative rounded-2xl border border-purple-500/40 bg-gradient-to-b from-[#130f24] to-[#0d0a1c] p-5 shadow-[0_0_30px_rgba(139,92,246,0.18)] flex flex-col justify-between overflow-hidden">
+                    {/* Top Most Popular Badge */}
+                    <div className="absolute top-3 right-3">
+                      <span className="rounded-full bg-purple-500/25 border border-purple-500/40 text-purple-300 text-[10px] font-bold px-2.5 py-0.5">
+                        Most Popular
+                      </span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <h3 className="font-display text-sm font-bold text-white">Pro</h3>
+                          <div className="font-display text-2xl font-extrabold text-white mt-1">
+                            {proPrice ? formatMoney(proPrice.amountCents, "USD") : "$3.99"}{" "}
+                            <span className="text-xs font-normal text-slate-400">/month</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">More power. More privacy.</p>
+                        </div>
+                        <Crown3DIcon className="shrink-0 scale-90" />
+                      </div>
+
+                      <ul className="mt-3 space-y-1.5 text-xs text-slate-300">
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-purple-400" />
+                          <span>Custom domains</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-purple-400" />
+                          <span>Longer retention</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-purple-400" />
+                          <span>No ads</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-purple-400" />
+                          <span>Priority support</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <Link
+                      href="/pricing"
+                      className="block w-full text-center rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs py-2 mt-4 transition-all shadow-md active:scale-95"
+                    >
+                      Upgrade to Pro
+                    </Link>
+                  </div>
+
+                  {/* BUSINESS PLAN */}
+                  <div className="relative rounded-2xl border border-white/[0.08] bg-[#0c1017]/95 backdrop-blur-xl p-5 shadow-xl flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div>
+                          <h3 className="font-display text-sm font-bold text-white">Business</h3>
+                          <div className="font-display text-2xl font-extrabold text-white mt-1">
+                            {businessPrice ? formatMoney(businessPrice.amountCents, "USD") : "$9.99"}{" "}
+                            <span className="text-xs font-normal text-slate-400">/month</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 mt-0.5">For teams and professionals.</p>
+                        </div>
+                        <Vault3DIcon className="shrink-0 scale-90" />
+                      </div>
+
+                      <ul className="mt-3 space-y-1.5 text-xs text-slate-300">
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-[#00f5a0]" />
+                          <span>All Pro features</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-[#00f5a0]" />
+                          <span>API access</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-[#00f5a0]" />
+                          <span>Priority support</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-[#00f5a0]" />
+                          <span>Team management</span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <Link
+                      href="/pricing"
+                      className="block w-full text-center rounded-xl bg-white/[0.08] hover:bg-white/[0.14] text-white font-bold text-xs py-2 mt-4 transition-colors"
+                    >
+                      Choose Business
+                    </Link>
+                  </div>
+                </section>
+
+                {/* Activity Stats Bar */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="font-mono text-lg font-bold text-white">
+                      {Number(stats.mailboxesCreated).toLocaleString()}
+                    </div>
+                    <div className="text-[11px] text-slate-400">Inboxes created</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="font-mono text-lg font-bold text-white">
+                      {Number(stats.messagesReceived).toLocaleString()}
+                    </div>
+                    <div className="text-[11px] text-slate-400">Messages received</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="font-mono text-lg font-bold text-[#00f5a0]">
+                      {Number(stats.activeMailboxes).toLocaleString()}
+                    </div>
+                    <div className="text-[11px] text-slate-400">Active now</div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                    <div className="font-mono text-lg font-bold text-white">
+                      {Number(stats.countriesServed).toLocaleString()}
+                    </div>
+                    <div className="text-[11px] text-slate-400">Countries served</div>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right 320 × 50 Mobile Leaderboard Ad (Desktop/Tablet) */}
+              <div className="hidden lg:flex justify-end">
+                <AdSlot placement="mobile-banner" />
+              </div>
             </div>
-          ))}
+
+          </div>
+
+          {/* RIGHT COLUMN: POWERFUL FEATURES SIDEBAR (Sticky / Full Height) */}
+          <div className="hidden lg:block sticky top-20">
+            <FeaturesSidebar />
+          </div>
+
         </div>
-      </section>
-    </>
+
+        {/* Global FAQs */}
+        <section className="rounded-2xl border border-white/[0.08] bg-[#0c1017]/80 backdrop-blur-xl p-6 sm:p-8 mt-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-display text-xl font-bold text-white tracking-tight">
+                Frequently asked questions
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Everything about Haven security & disposable mail</p>
+            </div>
+            <Link href="/faq" className="text-xs font-semibold text-[#00f5a0] hover:underline">
+              View all FAQs →
+            </Link>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {faqs.map((f) => (
+              <div key={f.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                <h3 className="text-sm font-semibold text-white">{f.question}</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">{f.answer}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+      </main>
+    </div>
   );
 }
