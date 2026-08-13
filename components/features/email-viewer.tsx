@@ -7,6 +7,7 @@ import {
   Download,
   FileText,
   Flag,
+  Mail,
   MoreHorizontal,
   Printer,
   Reply,
@@ -43,81 +44,72 @@ export function EmailViewer({
 
   const srcDoc = useMemo(
     () => buildSrcDoc(message.htmlSafe || wrapText(message.textBody || ""), loadRemote),
-    [message, loadRemote],
+    [message.htmlSafe, message.textBody, loadRemote],
   );
-
-  // Check if this is the sample GitHub code verification email to render the custom verification code block
-  const isGitHubVerification =
-    message.subject?.toLowerCase().includes("verification") ||
-    message.fromAddress?.toLowerCase().includes("github") ||
-    Boolean(message.fromName?.toLowerCase().includes("github"));
-
-  // Extract 6-digit code if present or default sample
-  const codeMatch = message.textBody?.match(/\b(\d{6})\b/);
-  const verificationDigits: string[] = codeMatch && codeMatch[1]
-    ? codeMatch[1].split("")
-    : ["2", "8", "6", "4", "1", "9"];
+  const sender = message.fromName || message.fromAddress;
+  const senderInitial = sender.trim().slice(0, 1).toUpperCase() || "?";
+  const attachments = message.attachments || [];
 
   return (
-    <article className="rounded-2xl border border-white/[0.08] bg-[#0c1017]/95 backdrop-blur-xl flex flex-col h-full overflow-hidden">
-      {/* Email Reader Header */}
-      <header className="p-4 sm:p-5 border-b border-white/[0.08] space-y-3">
-        {/* Subject & Toolbar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <h2 className="font-display text-base sm:text-lg font-bold text-white tracking-tight truncate">
-              {message.subject}
+    <article className="flex min-w-0 flex-col rounded-2xl border border-white/[0.08] bg-[#0c1017]/95 backdrop-blur-xl">
+      <header className="min-w-0 space-y-3 border-b border-white/[0.08] p-4 sm:p-5">
+        <div className="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <h2 className="min-w-0 break-words font-display text-base font-bold tracking-tight text-white sm:text-lg">
+              {message.subject || "(no subject)"}
             </h2>
-            <span className="rounded-full bg-[#00f5a0]/15 border border-[#00f5a0]/30 text-[#00f5a0] text-[10px] font-bold px-2.5 py-0.5 shrink-0">
-              Unread
-            </span>
+            {!message.read ? (
+              <span className="shrink-0 rounded-full border border-[#00f5a0]/30 bg-[#00f5a0]/15 px-2.5 py-0.5 text-[10px] font-bold text-[#00f5a0]">
+                Unread
+              </span>
+            ) : null}
           </div>
 
-          {/* Action Toolbar */}
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 text-slate-400">
+          <div className="flex min-w-0 flex-wrap items-center gap-1 text-slate-400 sm:gap-1.5">
             <button
               type="button"
-              onClick={() => setStarred((v) => !v)}
-              className="p-1.5 rounded-lg hover:bg-white/[0.08] hover:text-amber-400 transition-colors"
+              onClick={() => setStarred((value) => !value)}
+              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-amber-400"
               title="Star email"
+              aria-pressed={starred}
             >
               <Star className={cn("size-4", starred && "fill-amber-400 text-amber-400")} />
             </button>
-
             <button
               type="button"
               onClick={() => toast.info("Reply is disabled on temporary inboxes")}
-              className="p-1.5 rounded-lg hover:bg-white/[0.08] hover:text-white transition-colors"
+              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
               title="Reply"
             >
               <Reply className="size-4" />
             </button>
-
             <button
               type="button"
               onClick={() => toast.info("Forward is a Pro feature")}
-              className="p-1.5 rounded-lg hover:bg-white/[0.08] hover:text-white transition-colors"
+              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
               title="Forward"
             >
               <Share2 className="size-4" />
             </button>
-
             <button
               type="button"
               onClick={async () => {
-                await navigator.clipboard.writeText(message.textBody || message.subject);
-                toast.success("Message text copied");
+                try {
+                  await navigator.clipboard.writeText(message.textBody || message.subject || "");
+                  toast.success("Message text copied");
+                } catch {
+                  toast.error("Could not copy message text");
+                }
               }}
-              className="p-1.5 rounded-lg hover:bg-white/[0.08] hover:text-white transition-colors"
+              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
               title="Copy text"
             >
               <Copy className="size-4" />
             </button>
-
             <button
               type="button"
               onClick={onDelete}
-              className="p-1.5 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors"
+              className="rounded-lg p-1.5 transition-colors hover:bg-red-500/20 hover:text-red-400"
               title="Delete email"
             >
               <Trash2 className="size-4" />
@@ -126,22 +118,24 @@ export function EmailViewer({
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setShowMoreMenu((v) => !v)}
-                className="p-1.5 rounded-lg hover:bg-white/[0.08] hover:text-white transition-colors"
+                onClick={() => setShowMoreMenu((value) => !value)}
+                className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
                 title="More actions"
+                aria-expanded={showMoreMenu}
               >
                 <MoreHorizontal className="size-4" />
               </button>
 
-              {showMoreMenu && (
-                <div className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-white/10 bg-[#0d121c] p-1.5 shadow-2xl z-20 space-y-1 text-xs text-slate-300">
+              {showMoreMenu ? (
+                <div className="absolute right-0 top-full z-20 mt-1 w-44 space-y-1 rounded-xl border border-white/10 bg-[#0d121c] p-1.5 text-xs text-slate-300 shadow-2xl">
                   <button
                     type="button"
+                    disabled={!message.read}
                     onClick={() => {
                       onUnread();
                       setShowMoreMenu(false);
                     }}
-                    className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.08] hover:text-white"
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left hover:bg-white/[0.08] hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
                   >
                     <RotateCcw className="size-3.5" />
                     <span>Mark as unread</span>
@@ -152,7 +146,7 @@ export function EmailViewer({
                       window.print();
                       setShowMoreMenu(false);
                     }}
-                    className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.08] hover:text-white"
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left hover:bg-white/[0.08] hover:text-white"
                   >
                     <Printer className="size-3.5" />
                     <span>Print email</span>
@@ -163,7 +157,7 @@ export function EmailViewer({
                       onReport();
                       setShowMoreMenu(false);
                     }}
-                    className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.08] hover:text-white"
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left hover:bg-white/[0.08] hover:text-white"
                   >
                     <Flag className="size-3.5" />
                     <span>Report spam</span>
@@ -174,167 +168,128 @@ export function EmailViewer({
                       onBlock();
                       setShowMoreMenu(false);
                     }}
-                    className="w-full text-left flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-red-500/20 text-red-400"
+                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-red-400 hover:bg-red-500/20"
                   >
                     <Ban className="size-3.5" />
                     <span>Block sender</span>
                   </button>
                 </div>
-              )}
+              ) : null}
             </div>
 
-            <span className="text-xs text-slate-400 font-mono pl-2 border-l border-white/10">
+            <time
+              className="ml-1 border-l border-white/10 pl-2 font-mono text-xs text-slate-400"
+              dateTime={message.receivedAt}
+            >
               {new Date(message.receivedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-            </span>
+            </time>
           </div>
         </div>
 
-        {/* Sender Info Row */}
-        <div className="flex items-center gap-3 pt-1">
-          <div className="size-9 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center text-white shrink-0">
-            <svg viewBox="0 0 24 24" className="size-4.5 fill-white" aria-hidden>
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-            </svg>
+        <div className="flex min-w-0 items-center gap-3 pt-1">
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#00f5a0]/25 bg-[#00f5a0]/10 text-xs font-bold text-[#00f5a0]">
+            {senderInitial}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline gap-2">
-              <span className="text-xs font-bold text-white">{message.fromName || "GitHub"}</span>
-              <span className="text-[11px] text-slate-400 truncate">&lt;{message.fromAddress}&gt;</span>
+            <div className="flex min-w-0 flex-col text-xs sm:flex-row sm:items-baseline sm:gap-2">
+              <span className="truncate font-bold text-white">{sender}</span>
+              {message.fromName ? (
+                <span className="truncate text-[11px] text-slate-400">&lt;{message.fromAddress}&gt;</span>
+              ) : null}
             </div>
-            <div className="text-[11px] text-slate-500 truncate mt-0.5">
-              to: <span className="font-mono text-slate-400">your temporary inbox</span>
+            <div className="mt-0.5 truncate text-[11px] text-slate-500">
+              to: <span className="font-mono text-slate-400">{message.toAddress}</span>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Security notice for remote images if needed */}
-      {!loadRemote && Boolean(message.htmlSafe) && (
-        <div className="px-4 py-2 text-[11px] bg-slate-900/60 border-b border-white/[0.05] flex items-center justify-between text-slate-400 no-print">
-          <span>Remote images blocked to prevent trackers.</span>
+      {!loadRemote && Boolean(message.htmlSafe) ? (
+        <div className="flex flex-col gap-2 border-b border-white/[0.05] bg-slate-900/60 px-4 py-2 text-[11px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+          <span>Remote images are blocked to prevent tracking.</span>
           <button
             type="button"
-            className="text-[#00f5a0] hover:underline font-medium"
+            className="self-start font-medium text-[#00f5a0] hover:underline sm:self-auto"
             onClick={() => setLoadRemote(true)}
           >
             Load remote images
           </button>
         </div>
-      )}
+      ) : null}
 
-      {/* Email Body Content */}
-      <div className="p-5 flex-1 overflow-y-auto min-h-[260px] text-slate-200 text-sm leading-relaxed space-y-4">
-        {isGitHubVerification ? (
-          /* Sleek Custom Styled Verification Code View Matching Reference Image */
-          <div className="space-y-4 font-sans">
-            <p className="text-slate-300">Hi there,</p>
-            <p className="text-slate-300">Your GitHub verification code is:</p>
-
-            {/* 6 Digit Verification Boxes */}
-            <div className="flex items-center gap-2 py-2">
-              {verificationDigits.map((digit, idx) => (
-                <div
-                  key={idx}
-                  className="size-11 sm:size-12 rounded-xl border border-white/15 bg-[#070a10] flex items-center justify-center font-mono font-bold text-xl sm:text-2xl text-white shadow-inner"
-                >
-                  {digit}
-                </div>
-              ))}
-            </div>
-
-            <p className="text-xs text-slate-400">This code will expire in 10 minutes.</p>
-            <p className="text-xs text-slate-400">If you didn&apos;t request this, you can ignore this email.</p>
-
-            <div className="pt-2 text-xs text-slate-400">
-              <p>Thanks,</p>
-              <p className="font-semibold text-slate-300">The GitHub Team</p>
-            </div>
-          </div>
-        ) : message.htmlSafe ? (
-          /* Secure Sandboxed IFrame for Custom Received HTML Mail */
+      <div className="min-h-[260px] min-w-0 flex-1 p-4 text-sm leading-relaxed text-slate-200 sm:p-5">
+        {message.htmlSafe ? (
           <iframe
             title="Message body"
             sandbox=""
             referrerPolicy="no-referrer"
             srcDoc={srcDoc}
-            className="w-full min-h-[300px] bg-transparent border-0 rounded-xl"
+            className="min-h-[320px] w-full rounded-xl border-0 bg-transparent"
           />
-        ) : (
-          <pre className="whitespace-pre-wrap font-sans text-sm text-slate-300">
-            {message.textBody || "No message content."}
+        ) : message.textBody ? (
+          <pre className="max-w-full whitespace-pre-wrap break-words font-sans text-sm text-slate-300">
+            {message.textBody}
           </pre>
+        ) : (
+          <div className="flex min-h-52 flex-col items-center justify-center text-center text-slate-500">
+            <Mail className="mb-2 size-5" />
+            <p className="text-xs">This email has no text content.</p>
+          </div>
         )}
       </div>
 
-      {/* Attachments Section */}
-      <footer className="p-4 border-t border-white/[0.08] bg-[#070a10]/50 space-y-2.5">
-        <div className="text-xs font-semibold text-slate-300">
-          Attachments ({message.attachments?.length || 1})
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          {message.attachments && message.attachments.length > 0 ? (
-            message.attachments.map((a) => (
+      {attachments.length > 0 ? (
+        <footer className="space-y-2.5 border-t border-white/[0.08] bg-[#070a10]/50 p-4">
+          <div className="text-xs font-semibold text-slate-300">
+            Attachments ({attachments.length})
+          </div>
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
+            {attachments.map((attachment) => (
               <div
-                key={a.id}
-                className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-[#0d121c] px-3.5 py-2.5 text-xs text-white max-w-sm"
+                key={attachment.id}
+                className="flex min-w-0 items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0d121c] px-3.5 py-2.5 text-xs text-white"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <FileText className="size-4 text-[#00f5a0] shrink-0" />
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <FileText className="size-4 shrink-0 text-[#00f5a0]" />
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{a.filename}</p>
-                    <p className="text-[10px] text-slate-400">{formatBytes(a.sizeBytes)}</p>
+                    <p className="truncate font-medium">{attachment.filename}</p>
+                    <p className="text-[10px] text-slate-400">
+                      {formatBytes(attachment.sizeBytes)}
+                      {attachment.blocked ? " · Blocked for safety" : ""}
+                    </p>
                   </div>
                 </div>
 
-                <a
-                  href={`/api/v1/messages/${message.id}/attachments/${a.id}?token=${mailboxToken}`}
-                  className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-[#00f5a0]/20 hover:text-[#00f5a0] transition-colors"
-                  download
-                  title="Download attachment"
-                >
-                  <Download className="size-3.5" />
-                </a>
+                {!attachment.blocked ? (
+                  <a
+                    href={`/api/v1/messages/${message.id}/attachments/${attachment.id}?token=${mailboxToken}`}
+                    className="shrink-0 rounded-lg bg-white/[0.06] p-1.5 transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0]"
+                    download
+                    title={`Download ${attachment.filename}`}
+                  >
+                    <Download className="size-3.5" />
+                  </a>
+                ) : null}
               </div>
-            ))
-          ) : (
-            /* Default attachment card matching the reference image (code.png · 23.1 KB) */
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-[#0d121c] px-3.5 py-2.5 text-xs text-white w-full sm:max-w-xs shadow-sm">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <FileText className="size-4 text-[#00f5a0] shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-medium truncate">code.png</p>
-                  <p className="text-[10px] text-slate-400">23.1 KB</p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => toast.success("Downloading code.png")}
-                className="p-1.5 rounded-lg bg-white/[0.06] hover:bg-[#00f5a0]/20 hover:text-[#00f5a0] transition-colors"
-                title="Download attachment"
-              >
-                <Download className="size-3.5" />
-              </button>
-            </div>
-          )}
-        </div>
-      </footer>
+            ))}
+          </div>
+        </footer>
+      ) : null}
     </article>
   );
 }
 
 function wrapText(text: string) {
-  const esc = text
+  const escaped = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-  return `<pre style="white-space:pre-wrap;font:14px/1.5 ui-sans-serif,system-ui">${esc}</pre>`;
+  return `<pre style="white-space:pre-wrap;font:14px/1.5 ui-sans-serif,system-ui">${escaped}</pre>`;
 }
 
 function buildSrcDoc(html: string, loadRemote: boolean) {
   const body = loadRemote
     ? html
     : html.replace(/<img\b[^>]*src=["']https?:\/\/[^"']+["'][^>]*>/gi, "<!-- remote image blocked -->");
-  return `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob: ${loadRemote ? "https: http:" : ""}; style-src 'unsafe-inline'; font-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none';"/><style>body{margin:16px;font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#e2e8f0;background:#0c1017;word-wrap:break-word}img{max-width:100%;height:auto}a{color:#00f5a0;text-decoration:none}a:hover{text-decoration:underline}</style></head><body>${body}</body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width"/><meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data: blob: ${loadRemote ? "https: http:" : ""}; style-src 'unsafe-inline'; font-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none';"/><style>html,body{max-width:100%}body{margin:16px;font:14px/1.6 -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;color:#e2e8f0;background:#0c1017;overflow-wrap:anywhere}img{max-width:100%;height:auto}table{max-width:100%}a{color:#00f5a0;text-decoration:none}a:hover{text-decoration:underline}</style></head><body>${body}</body></html>`;
 }

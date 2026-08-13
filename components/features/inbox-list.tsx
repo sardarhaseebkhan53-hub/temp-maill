@@ -1,224 +1,200 @@
 "use client";
 
-import { Paperclip } from "lucide-react";
+import { Copy, Inbox, MailOpen, Paperclip } from "lucide-react";
 import { cn, relativeTime, truncate } from "@/lib/utils";
 import type { PublicMessage } from "@/types";
 
 interface InboxListProps {
   messages: PublicMessage[];
+  messageCount: number;
+  unreadCount: number;
+  mailboxAddress?: string;
+  loading?: boolean;
   selectedId?: string;
   onSelect: (id: string) => void;
+  onCopyAddress?: () => void;
   activeFilter?: "all" | "unread" | "read";
   onFilterChange?: (filter: "all" | "unread" | "read") => void;
 }
 
-// Brand Avatar Icons matching reference image
 function SenderAvatar({ name }: { name: string }) {
-  const n = (name || "").toLowerCase();
-  if (n.includes("github")) {
-    return (
-      <div className="size-8 rounded-full bg-[#1e293b] border border-white/10 flex items-center justify-center text-white shrink-0 shadow-sm">
-        <svg viewBox="0 0 24 24" className="size-4 fill-white" aria-hidden>
-          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-        </svg>
-      </div>
-    );
-  }
-  if (n.includes("netflix")) {
-    return (
-      <div className="size-8 rounded-full bg-black border border-red-500/30 flex items-center justify-center text-[#e50914] font-black text-sm shrink-0">
-        N
-      </div>
-    );
-  }
-  if (n.includes("discord")) {
-    return (
-      <div className="size-8 rounded-full bg-[#5865F2] flex items-center justify-center text-white shrink-0">
-        <svg viewBox="0 0 24 24" className="size-4 fill-white" aria-hidden>
-          <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-        </svg>
-      </div>
-    );
-  }
-  if (n.includes("amazon")) {
-    return (
-      <div className="size-8 rounded-full bg-[#ff9900]/20 border border-[#ff9900]/40 flex items-center justify-center text-[#ff9900] font-bold text-xs shrink-0">
-        a
-      </div>
-    );
-  }
-  if (n.includes("microsoft")) {
-    return (
-      <div className="size-8 rounded-full bg-[#00a4ef]/20 border border-[#00a4ef]/40 flex items-center justify-center shrink-0">
-        <div className="grid grid-cols-2 gap-0.5 size-3.5">
-          <div className="bg-[#f25022]" />
-          <div className="bg-[#7fba00]" />
-          <div className="bg-[#00a4ef]" />
-          <div className="bg-[#ffb900]" />
-        </div>
-      </div>
-    );
-  }
+  const initial = name.trim().slice(0, 1).toUpperCase() || "?";
   return (
-    <div className="size-8 rounded-full bg-[#00f5a0]/15 border border-[#00f5a0]/30 text-[#00f5a0] flex items-center justify-center font-bold text-xs shrink-0">
-      {(name || "?").slice(0, 1).toUpperCase()}
+    <div className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#00f5a0]/25 bg-[#00f5a0]/10 text-xs font-bold text-[#00f5a0]">
+      {initial}
     </div>
   );
 }
 
 export function InboxList({
   messages,
+  messageCount,
+  unreadCount,
+  mailboxAddress,
+  loading = false,
   selectedId,
   onSelect,
+  onCopyAddress,
   activeFilter = "all",
   onFilterChange,
 }: InboxListProps) {
-  const filtered = messages.filter((m) => {
-    if (activeFilter === "unread") return !m.read;
-    if (activeFilter === "read") return m.read;
+  const filtered = messages.filter((message) => {
+    if (activeFilter === "unread") return !message.read;
+    if (activeFilter === "read") return message.read;
     return true;
   });
 
-  const unreadCount = messages.filter((m) => !m.read).length;
+  const isEmptyInbox = messageCount === 0 && messages.length === 0;
+  const emptyFilterLabel =
+    activeFilter === "unread"
+      ? "No unread messages"
+      : activeFilter === "read"
+        ? "No read messages"
+        : "No messages available";
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Top Header & Filter Row */}
-      <div className="p-3 sm:p-4 border-b border-white/[0.08] flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-white text-sm">Inbox</h3>
-          <span className="text-[11px] text-slate-400 font-medium">
-            {unreadCount} unread message{unreadCount === 1 ? "" : "s"}
+    <div className="flex min-h-72 min-w-0 flex-col">
+      <div className="flex flex-col gap-3 border-b border-white/[0.08] p-3 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <h2 className="text-sm font-semibold text-white">Inbox</h2>
+          <span className="whitespace-nowrap text-[11px] font-medium text-slate-400">
+            {messageCount} {messageCount === 1 ? "message" : "messages"}
           </span>
+          {unreadCount > 0 ? (
+            <span className="whitespace-nowrap rounded-full border border-[#00f5a0]/20 bg-[#00f5a0]/10 px-2 py-0.5 text-[10px] font-bold text-[#00f5a0]">
+              {unreadCount} unread
+            </span>
+          ) : null}
         </div>
 
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.06] text-xs">
-          <button
-            type="button"
-            onClick={() => onFilterChange?.("all")}
-            className={cn(
-              "px-2.5 py-1 rounded-lg font-medium transition-colors",
-              activeFilter === "all"
-                ? "bg-white/[0.12] text-white font-semibold shadow-sm"
-                : "text-slate-400 hover:text-white",
-            )}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            onClick={() => onFilterChange?.("unread")}
-            className={cn(
-              "px-2.5 py-1 rounded-lg font-medium transition-colors flex items-center gap-1",
-              activeFilter === "unread"
-                ? "bg-white/[0.12] text-white font-semibold shadow-sm"
-                : "text-slate-400 hover:text-white",
-            )}
-          >
-            <span>Unread</span>
-            {unreadCount > 0 && (
-              <span className="size-4 rounded-full bg-[#00f5a0]/20 text-[#00f5a0] text-[10px] font-bold inline-flex items-center justify-center">
-                {unreadCount}
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => onFilterChange?.("read")}
-            className={cn(
-              "px-2.5 py-1 rounded-lg font-medium transition-colors",
-              activeFilter === "read"
-                ? "bg-white/[0.12] text-white font-semibold shadow-sm"
-                : "text-slate-400 hover:text-white",
-            )}
-          >
-            Read
-          </button>
-        </div>
+        {!isEmptyInbox ? (
+          <div className="grid w-full grid-cols-3 gap-1 rounded-xl border border-white/[0.06] bg-white/[0.04] p-1 text-xs sm:w-auto">
+            {(["all", "unread", "read"] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => onFilterChange?.(filter)}
+                className={cn(
+                  "rounded-lg px-2.5 py-1.5 font-medium capitalize transition-colors",
+                  activeFilter === filter
+                    ? "bg-white/[0.12] font-semibold text-white shadow-sm"
+                    : "text-slate-400 hover:text-white",
+                )}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
-      {/* Messages List */}
-      {filtered.length === 0 ? (
-        <div className="p-8 text-center flex flex-col items-center justify-center my-auto">
-          <div className="size-10 rounded-2xl bg-[#00f5a0]/10 border border-[#00f5a0]/20 flex items-center justify-center text-[#00f5a0] mb-2 animate-float">
-            ✉
-          </div>
-          <p className="text-xs font-semibold text-white">No messages here</p>
-          <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">
-            Send an email or click &quot;Send Sample&quot; above.
-          </p>
+      {loading && messages.length === 0 ? (
+        <div className="flex flex-1 flex-col items-center justify-center px-5 py-12 text-center" role="status">
+          <div className="mb-4 size-10 animate-pulse rounded-2xl border border-[#00f5a0]/20 bg-[#00f5a0]/10" />
+          <p className="text-sm font-semibold text-white">Checking your inbox…</p>
+          <p className="mt-1 text-xs text-slate-400">Only received messages will appear here.</p>
         </div>
+      ) : filtered.length === 0 ? (
+        isEmptyInbox ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-5 py-10 text-center sm:py-14">
+            <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl border border-[#00f5a0]/25 bg-[#00f5a0]/10 text-[#00f5a0] shadow-[0_0_24px_rgba(0,245,160,0.1)]">
+              <Inbox className="size-6" aria-hidden="true" />
+              <span className="absolute -right-1 -top-1 size-3 rounded-full border-2 border-[#0c1017] bg-[#00f5a0]" />
+            </div>
+            <h3 className="font-display text-base font-bold text-white">No messages yet</h3>
+            <p className="mt-2 max-w-sm text-xs leading-relaxed text-slate-400 sm:text-sm">
+              Your temporary inbox is ready. Emails sent to this address will appear here automatically.
+            </p>
+            {mailboxAddress && onCopyAddress ? (
+              <button
+                type="button"
+                onClick={onCopyAddress}
+                className="mt-5 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:border-[#00f5a0]/30 hover:bg-[#00f5a0]/10 hover:text-[#00f5a0]"
+              >
+                <Copy className="size-3.5" />
+                Copy email address
+              </button>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center px-5 py-10 text-center">
+            <div className="mb-3 flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-slate-400">
+              <MailOpen className="size-5" />
+            </div>
+            <p className="text-sm font-semibold text-white">{emptyFilterLabel}</p>
+            <button
+              type="button"
+              onClick={() => onFilterChange?.("all")}
+              className="mt-2 text-xs font-semibold text-[#00f5a0] hover:underline"
+            >
+              Show all messages
+            </button>
+          </div>
+        )
       ) : (
-        <ul className="divide-y divide-white/[0.05] overflow-y-auto max-h-[520px]">
-          {filtered.map((m) => {
-            const isSelected = selectedId === m.id;
-            const sender = m.fromName || m.fromAddress;
-            const isNetflix = sender.toLowerCase().includes("netflix");
+        <ul className="max-h-[540px] divide-y divide-white/[0.05] overflow-y-auto">
+          {filtered.map((message) => {
+            const isSelected = selectedId === message.id;
+            const sender = message.fromName || message.fromAddress;
 
             return (
-              <li key={m.id}>
+              <li key={message.id} className="min-w-0">
                 <button
                   type="button"
-                  onClick={() => onSelect(m.id)}
+                  onClick={() => onSelect(message.id)}
                   className={cn(
-                    "w-full text-left p-3 sm:px-4 sm:py-3.5 flex items-start gap-3 transition-all duration-150 relative group",
+                    "group relative flex w-full min-w-0 items-start gap-3 p-3 text-left transition-colors sm:px-4 sm:py-3.5",
                     isSelected
-                      ? "bg-white/[0.08] before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-[#00f5a0] before:shadow-[0_0_8px_rgba(0,245,160,0.8)]"
+                      ? "bg-white/[0.08] before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-[#00f5a0] before:shadow-[0_0_8px_rgba(0,245,160,0.8)]"
                       : "hover:bg-white/[0.04]",
                   )}
                 >
                   <SenderAvatar name={sender} />
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-1 mb-0.5">
-                      <h4 className={cn("text-xs font-semibold truncate", !m.read ? "text-white" : "text-slate-300")}>
-                        {sender}
-                      </h4>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {!m.read && (
-                          <span
-                            className={cn(
-                              "size-2 rounded-full",
-                              isNetflix ? "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" : "bg-[#00f5a0] shadow-[0_0_6px_rgba(0,245,160,0.8)]",
-                            )}
-                          />
+                    <div className="mb-0.5 flex min-w-0 items-center justify-between gap-2">
+                      <h3
+                        className={cn(
+                          "min-w-0 truncate text-xs font-semibold",
+                          !message.read ? "text-white" : "text-slate-300",
                         )}
-                        <span className="text-[11px] text-slate-400 font-medium">
-                          {relativeTime(m.receivedAt)}
-                        </span>
+                      >
+                        {sender}
+                      </h3>
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {!message.read ? (
+                          <span className="size-2 rounded-full bg-[#00f5a0] shadow-[0_0_6px_rgba(0,245,160,0.8)]" />
+                        ) : null}
+                        <time className="text-[10px] font-medium text-slate-500" dateTime={message.receivedAt}>
+                          {relativeTime(message.receivedAt)}
+                        </time>
                       </div>
                     </div>
 
-                    <p className={cn("text-xs truncate font-medium", !m.read ? "text-slate-200" : "text-slate-400")}>
-                      {m.subject}
+                    <p
+                      className={cn(
+                        "truncate text-xs font-medium",
+                        !message.read ? "text-slate-200" : "text-slate-400",
+                      )}
+                    >
+                      {message.subject || "(no subject)"}
                     </p>
-
-                    <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                      {truncate(m.snippet || "", 60)}
-                    </p>
+                    {message.snippet ? (
+                      <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                        {truncate(message.snippet, 80)}
+                      </p>
+                    ) : null}
                   </div>
 
-                  {m.hasAttachments && (
-                    <Paperclip className="size-3.5 text-slate-500 shrink-0 self-center" />
-                  )}
+                  {message.hasAttachments ? (
+                    <Paperclip className="size-3.5 shrink-0 self-center text-slate-500" aria-label="Has attachments" />
+                  ) : null}
                 </button>
               </li>
             );
           })}
         </ul>
       )}
-
-      {/* Bottom Link */}
-      <div className="p-3 border-t border-white/[0.08] text-center mt-auto">
-        <button
-          type="button"
-          onClick={() => onFilterChange?.("all")}
-          className="text-xs font-semibold text-[#00f5a0] hover:underline"
-        >
-          View All Messages
-        </button>
-      </div>
     </div>
   );
 }

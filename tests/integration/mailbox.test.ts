@@ -35,6 +35,9 @@ describe("mailbox lifecycle", () => {
     const { mailbox } = await createMailbox({ guestKey: "test-guest" });
     expect(mailbox.address).toContain("@");
     expect(mailbox.state).toBe("ACTIVE");
+    expect(mailbox.messageCount).toBe(0);
+    expect(mailbox.unreadCount).toBe(0);
+    expect(await prisma.emailMessage.count({ where: { mailboxId: mailbox.id } })).toBe(0);
 
     const result = await ingestInbound({
       provider: "mock",

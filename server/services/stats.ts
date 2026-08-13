@@ -2,16 +2,17 @@ import { prisma } from "@/lib/db";
 import type { PublicStats } from "@/types";
 
 export async function publicStats(): Promise<PublicStats> {
-  const [mailboxesCreated, messagesReceived, activeMailboxes] = await Promise.all([
+  const [mailboxesCreated, messagesReceived, activeMailboxes, activeDomains] = await Promise.all([
     prisma.temporaryMailbox.count(),
     prisma.emailMessage.count(),
     prisma.temporaryMailbox.count({ where: { state: { in: ["ACTIVE", "EXPIRING_SOON"] } } }),
+    prisma.emailDomain.count({ where: { status: "ACTIVE" } }),
   ]);
   return {
     mailboxesCreated,
     messagesReceived,
     activeMailboxes,
-    countriesServed: 48,
+    activeDomains,
   };
 }
 

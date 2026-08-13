@@ -1,5 +1,4 @@
-import { cookies } from "next/headers";
-import { getGuest, rememberMailbox, guestCookieOptions } from "@/lib/guest";
+import { getGuest } from "@/lib/guest";
 import { createMailbox, getMailboxById, refreshMailboxState, toPublicMailbox } from "@/server/services/mailbox";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -11,7 +10,7 @@ export async function getOrCreateGuestMailbox(): Promise<PublicMailbox> {
   if (guest.boxes[0]) {
     try {
       const existing = await getMailboxById(guest.boxes[0]);
-      if (existing.state !== "PURGED") {
+      if (existing.state === "ACTIVE" || existing.state === "EXPIRING_SOON") {
         return toPublicMailbox(existing);
       }
     } catch {

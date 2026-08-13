@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Check, Clock, Copy, Plus, QrCode, RefreshCw, Share2, Trash2 } from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { Dialog } from "@/components/ui/dialog";
@@ -13,7 +14,6 @@ interface MailboxCardProps {
   onRefresh: () => Promise<void>;
   onDelete: () => Promise<void>;
   onExtend: () => Promise<void>;
-  onChange?: () => void;
   className?: string;
 }
 
@@ -22,7 +22,6 @@ export function MailboxCard({
   onRefresh,
   onDelete,
   onExtend,
-  onChange: _onChange,
   className,
 }: MailboxCardProps) {
   const { copied, copy } = useClipboard();
@@ -35,23 +34,29 @@ export function MailboxCard({
     return () => clearInterval(id);
   }, []);
 
-  const totalDurationMs = 10 * 60 * 1000; // 10 minutes default scale
+  const defaultDurationMs = 10 * 60 * 1000;
   const remaining = Math.max(0, new Date(mailbox.expiresAt).getTime() - now);
-  const totalSec = Math.floor(remaining / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  const timeFormatted = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-
-  // 8 Segments for the progress bar
+  const totalSeconds = Math.floor(remaining / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const timeFormatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   const totalSegments = 8;
-  const fraction = Math.min(1, Math.max(0, remaining / totalDurationMs));
+  const fraction = Math.min(1, Math.max(0, remaining / defaultDurationMs));
   const activeSegments = remaining <= 0 ? 0 : Math.max(1, Math.ceil(fraction * totalSegments));
 
   async function loadQr() {
     try {
       const res = await fetch(`/api/v1/mailboxes/${mailbox.id}/qr?token=${mailbox.publicToken}`);
-      const json = await res.json();
-      if (json.success) setQr(json.data.dataUrl);
+      const json = (await res.json()) as {
+        success: boolean;
+        data?: { dataUrl?: string };
+        error?: { message?: string };
+      };
+      if (res.ok && json.success && json.data?.dataUrl) {
+        setQr(json.data.dataUrl);
+      } else {
+        toast.error(json.error?.message || "Could not generate QR code");
+      }
     } catch {
       toast.error("Could not generate QR code");
     }
@@ -68,18 +73,18 @@ export function MailboxCard({
         await navigator.share(data);
         return;
       } catch {
-        /* fallback to clipboard */
+        // The user may cancel the native share sheet; copying remains available.
       }
     }
     await copy(mailbox.address, "Address copied to clipboard");
   }
 
-  async function run(name: string, fn: () => Promise<void>) {
+  async function run(name: string, action: () => Promise<void>) {
     setBusy(name);
     try {
-      await fn();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Action failed");
+      await action();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Action failed");
     } finally {
       setBusy(null);
     }
@@ -88,155 +93,144 @@ export function MailboxCard({
   return (
     <div
       className={cn(
-        "relative rounded-2xl border border-[#00f5a0]/30 bg-[#0c1017]/95 backdrop-blur-2xl p-5 sm:p-6 shadow-[0_0_40px_rgba(0,245,160,0.09)] flex flex-col justify-between overflow-hidden",
+        "relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-[#00f5a0]/35 bg-[#0c1017]/95 p-4 shadow-[0_0_40px_rgba(0,245,160,0.12)] backdrop-blur-2xl sm:p-5",
         className,
       )}
     >
-      {/* Ambient background glow */}
-      <div className="absolute -top-24 -right-24 size-48 bg-[#00f5a0]/10 blur-3xl rounded-full pointer-events-none" />
+      <div className="pointer-events-none absolute -right-24 -top-24 size-48 rounded-full bg-[#00f5a0]/10 blur-3xl" />
 
-      {/* Top Header Row */}
-      <div className="flex items-center justify-between gap-2 mb-3.5">
+      <div className="relative mb-3.5 flex flex-col items-start gap-2 xs:flex-row xs:items-center xs:justify-between">
         <div className="flex items-center gap-2">
-          <span className="size-2 rounded-full bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.9)] animate-pulse" />
-          <span className="text-[11px] sm:text-xs font-semibold tracking-wider text-slate-300 uppercase">
-            YOUR TEMPORARY EMAIL
+          <span className="size-2 rounded-full bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.9)]" />
+          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 sm:text-xs">
+            Your temporary email
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-[#00f5a0] bg-[#00f5a0]/10 px-2.5 py-1 rounded-full border border-[#00f5a0]/20">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#00f5a0]/20 bg-[#00f5a0]/10 px-2.5 py-1 font-mono text-xs font-medium text-[#00f5a0]">
           <Clock className="size-3.5" />
-          <span>Expires in {timeFormatted}</span>
+          <span>{remaining > 0 ? `Expires in ${timeFormatted}` : "Expired"}</span>
         </div>
       </div>
 
-      {/* Address Input Display Box */}
-      <div className="relative rounded-xl border border-slate-800/90 bg-[#070a10] px-4 py-3 sm:py-3.5 flex items-center justify-between gap-3 group transition-colors hover:border-slate-700">
-        <span
+      <div className="group relative flex min-w-0 items-center justify-between gap-2 rounded-xl border border-slate-800/90 bg-[#070a10] px-3 py-3 transition-colors hover:border-slate-700 sm:gap-3 sm:px-4 sm:py-4">
+        <button
+          type="button"
           onClick={() => copy(mailbox.address)}
-          className="font-mono text-base sm:text-lg font-medium text-white tracking-tight truncate select-all cursor-pointer"
-          title="Click to copy address"
+          className="min-w-0 flex-1 truncate text-left font-mono text-sm font-semibold tracking-tight text-white xs:text-base sm:text-xl"
+          title="Copy email address"
         >
           {mailbox.address}
-        </span>
+        </button>
 
         <button
           type="button"
           onClick={() => copy(mailbox.address)}
-          className="shrink-0 p-2 rounded-lg bg-white/[0.05] hover:bg-[#00f5a0]/20 text-slate-300 hover:text-[#00f5a0] transition-colors"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0] sm:px-3"
           aria-label="Copy email address"
         >
           {copied ? <Check className="size-4 text-[#00f5a0]" /> : <Copy className="size-4" />}
+          <span className="hidden xs:inline">{copied ? "Copied" : "Copy"}</span>
         </button>
       </div>
 
-      {/* Primary Action Buttons: Copy, QR Code, Share, + New */}
-      <div className="mt-3.5 grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <p className="mt-2 text-[11px] font-medium text-slate-400">
+        Your address is ready to receive email.
+      </p>
+
+      <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <button
           type="button"
           onClick={() => copy(mailbox.address)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-3 py-2.5 text-xs font-semibold text-white transition-all active:scale-95"
+          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95"
         >
           {copied ? <Check className="size-3.5 text-[#00f5a0]" /> : <Copy className="size-3.5" />}
           <span>{copied ? "Copied!" : "Copy"}</span>
         </button>
-
         <button
           type="button"
           onClick={loadQr}
-          className="flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-3 py-2.5 text-xs font-semibold text-white transition-all active:scale-95"
+          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95"
         >
           <QrCode className="size-3.5 text-slate-300" />
-          <span>QR Code</span>
+          <span>QR code</span>
         </button>
-
         <button
           type="button"
           onClick={share}
-          className="flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 px-3 py-2.5 text-xs font-semibold text-white transition-all active:scale-95"
+          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95"
         >
           <Share2 className="size-3.5 text-slate-300" />
           <span>Share</span>
         </button>
-
         <button
           type="button"
           disabled={busy === "refresh"}
           onClick={() => run("refresh", onRefresh)}
-          className="flex items-center justify-center gap-1.5 rounded-xl bg-[#00f5a0]/15 hover:bg-[#00f5a0]/25 border border-[#00f5a0]/30 px-3 py-2.5 text-xs font-bold text-[#00f5a0] transition-all active:scale-95 shadow-[0_0_15px_rgba(0,245,160,0.15)]"
+          className="flex items-center justify-center gap-1.5 rounded-xl border border-[#00f5a0]/30 bg-[#00f5a0]/15 px-3 py-2.5 text-xs font-bold text-[#00f5a0] shadow-[0_0_15px_rgba(0,245,160,0.15)] transition-all hover:bg-[#00f5a0]/25 active:scale-95 disabled:cursor-wait disabled:opacity-60"
         >
-          {busy === "refresh" ? (
-            <RefreshCw className="size-3.5 animate-spin" />
-          ) : (
-            <Plus className="size-3.5" />
-          )}
-          <span>New</span>
+          {busy === "refresh" ? <RefreshCw className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
+          <span>New address</span>
         </button>
       </div>
 
-      {/* Progress & Expiration Status */}
       <div className="mt-4 pt-1">
-        <p className="text-[11px] text-slate-400 font-medium mb-2">
-          The address will expire automatically.
-        </p>
-
-        {/* 8 Segmented Progress Bar */}
-        <div className="grid grid-cols-8 gap-1.5 h-1.5 sm:h-2">
-          {Array.from({ length: totalSegments }).map((_, index) => {
-            const isFilled = index < activeSegments;
-            return (
-              <div
-                key={index}
-                className={cn(
-                  "rounded-full transition-all duration-500",
-                  isFilled
-                    ? "bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.7)]"
-                    : "bg-slate-800/80",
-                )}
-              />
-            );
-          })}
+        <div className="mb-2 flex items-center justify-between gap-3 text-[11px] font-medium text-slate-400">
+          <span>The address expires automatically.</span>
+          <span className="shrink-0 font-mono text-slate-500">{timeFormatted}</span>
+        </div>
+        <div className="grid h-1.5 grid-cols-8 gap-1.5 sm:h-2">
+          {Array.from({ length: totalSegments }).map((_, index) => (
+            <div
+              key={index}
+              className={cn(
+                "rounded-full transition-all duration-500",
+                index < activeSegments
+                  ? "bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.7)]"
+                  : "bg-slate-800/80",
+              )}
+            />
+          ))}
         </div>
       </div>
 
-      {/* Bottom Actions: Extend & Delete */}
-      <div className="mt-4 pt-3 border-t border-white/[0.07] flex items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.07] pt-3">
         <button
           type="button"
           disabled={busy === "extend"}
           onClick={() => run("extend", onExtend)}
-          className="flex items-center gap-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 px-4 py-2 text-xs font-semibold text-slate-200 transition-all active:scale-95"
+          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-slate-200 transition-all hover:bg-white/[0.08] active:scale-95 disabled:cursor-wait disabled:opacity-60"
         >
           <Clock className="size-3.5 text-[#00f5a0]" />
           <span>{busy === "extend" ? "Extending…" : "Extend"}</span>
         </button>
-
         <button
           type="button"
           disabled={busy === "delete"}
           onClick={() => run("delete", onDelete)}
-          className="flex items-center gap-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 px-4 py-2 text-xs font-semibold text-red-400 transition-all active:scale-95"
+          className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 active:scale-95 disabled:cursor-wait disabled:opacity-60"
         >
-          <Trash2 className="size-3.5 text-red-400" />
+          <Trash2 className="size-3.5" />
           <span>{busy === "delete" ? "Deleting…" : "Delete"}</span>
         </button>
       </div>
 
-      {/* QR Code Dialog */}
-      <Dialog open={Boolean(qr)} onClose={() => setQr(null)} title="Scan Temporary Address">
+      <Dialog open={Boolean(qr)} onClose={() => setQr(null)} title="Scan temporary address">
         {qr ? (
           <div className="flex flex-col items-center gap-4 py-2 text-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={qr}
               alt={`QR code for ${mailbox.address}`}
-              className="w-56 h-56 p-3 bg-white rounded-2xl shadow-xl"
+              width={224}
+              height={224}
+              unoptimized
+              className="size-48 rounded-2xl bg-white p-3 shadow-xl xs:size-56"
             />
-            <p className="text-xs font-mono text-slate-300 break-all">{mailbox.address}</p>
+            <p className="max-w-full break-all font-mono text-xs text-slate-300">{mailbox.address}</p>
             <a
               href={qr}
               download={`haven-${mailbox.localPart}.png`}
-              className="inline-flex items-center justify-center rounded-xl bg-[#00f5a0] text-black font-bold text-xs px-5 py-2.5 shadow-lg hover:bg-[#00e092] transition-colors"
+              className="inline-flex items-center justify-center rounded-xl bg-[#00f5a0] px-5 py-2.5 text-xs font-bold text-black shadow-lg transition-colors hover:bg-[#00e092]"
             >
               Download QR PNG
             </a>

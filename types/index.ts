@@ -102,7 +102,7 @@ export interface PublicStats {
   mailboxesCreated: number;
   messagesReceived: number;
   activeMailboxes: number;
-  countriesServed: number;
+  activeDomains: number;
 }
 
 export interface HealthStatus {
