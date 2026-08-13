@@ -6,10 +6,10 @@ import { Errors } from "@/lib/errors";
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
+    const token = await mailboxAuthToken(req);
     const body = await readJson<{ minutes?: number }>(req).catch(() => ({ minutes: 10 }));
     const box = await getMailboxById(id);
     const auth = await requestContext(req);
-    const token = await mailboxAuthToken(req);
     if (!(await canAccessMailbox(box, { userId: auth.user?.id, guestBoxes: auth.guest.boxes, token }))) {
       throw Errors.forbidden();
     }

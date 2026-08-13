@@ -2,6 +2,7 @@ import { argon2id } from "@noble/hashes/argon2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/db";
+import { purgeLegacyInjectedMessages } from "../../server/services/legacy-data-cleanup";
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16);
@@ -26,6 +27,8 @@ async function upsertFlag(key: string, enabled: boolean, description: string) {
 }
 
 async function main() {
+  await purgeLegacyInjectedMessages();
+
   const permissions = [
     ["admin.access", "admin", "Access the admin console"],
     ["admin.users.read", "users", "View users"],
@@ -331,7 +334,6 @@ async function main() {
     ["custom_domains", true, "Custom / premium domains"],
     ["aliases", true, "Email aliases"],
     ["maintenance_mode", false, "Global maintenance mode"],
-    ["demo_inject", true, "Allow demo message injection in non-production"],
   ];
   for (const [k, e, d] of flags) await upsertFlag(k, e, d);
 

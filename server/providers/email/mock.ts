@@ -6,30 +6,29 @@ export class MockInboundEmailProvider implements InboundEmailProvider {
   readonly key = "mock";
 
   async verify(_req: Request, _rawBody: string): Promise<boolean> {
-    if (!allowMockProviders()) return false;
-    return true;
+    return allowMockProviders();
   }
 
   async parse(req: Request, rawBody: string): Promise<InboundEmail[]> {
     if (!allowMockProviders()) throw Errors.forbidden();
     const json = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : await req.json();
-    const to = String(json.to || json.toAddress || "");
+    const to = String(json.to || json.toAddress || "").trim();
+    const fromAddress = String(json.from || json.fromAddress || "").trim();
     if (!to) throw Errors.validation("Missing recipient.");
+    if (!fromAddress) throw Errors.validation("Missing sender.");
+
+    const now = Date.now();
     return [
       {
         provider: "mock",
-        providerMessageId: String(json.id || `mock-${Date.now()}`),
-        idempotencyKey: String(json.idempotencyKey || json.id || `mock-${Date.now()}-${to}`),
-        fromAddress: String(json.from || json.fromAddress || "demo@example.com"),
-        fromName: json.fromName ? String(json.fromName) : "Demo Sender",
+        providerMessageId: String(json.id || `mock-${now}`),
+        idempotencyKey: String(json.idempotencyKey || json.id || `mock-${now}-${to}`),
+        fromAddress,
+        fromName: json.fromName ? String(json.fromName) : undefined,
         toAddresses: [to],
-        subject: String(json.subject || "Welcome to your Haven inbox"),
-        textBody: String(json.text || json.textBody || "This is a test message delivered through the inbound pipeline."),
-        htmlBody: String(
-          json.html ||
-            json.htmlBody ||
-            "<p>This is a <strong>test message</strong> delivered through the inbound pipeline.</p>",
-        ),
+        subject: String(json.subject || ""),
+        textBody: String(json.text || json.textBody || ""),
+        htmlBody: String(json.html || json.htmlBody || ""),
         headers: (json.headers as Record<string, string>) || {},
         attachments: [],
         receivedAt: new Date(),

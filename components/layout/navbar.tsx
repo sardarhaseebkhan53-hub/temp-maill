@@ -34,7 +34,7 @@ export function Navbar({ user }: { user: SessionUser | null }) {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#06080d]/85 backdrop-blur-xl no-print">
-      <div className="max-w-[1560px] mx-auto px-4 sm:px-6 flex h-[68px] items-center justify-between gap-4">
+      <div className="mx-auto flex h-16 w-full max-w-[1560px] min-w-0 items-center justify-between gap-2 px-3 sm:h-[68px] sm:gap-4 sm:px-6">
         {/* Left: Brand Logo */}
         <Link href="/" className="shrink-0 group" aria-label="Haven home">
           <HavenWordmark />
@@ -120,7 +120,7 @@ export function Navbar({ user }: { user: SessionUser | null }) {
           <button
             type="button"
             aria-label="Toggle theme"
-            className="rounded-xl p-2 text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+            className="hidden rounded-xl p-2 text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white sm:inline-flex"
             onClick={() => setTheme(dark ? "light" : "dark")}
           >
             <Moon className="size-4.5" />
@@ -151,7 +151,7 @@ export function Navbar({ user }: { user: SessionUser | null }) {
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center rounded-xl bg-[#00f5a0] hover:bg-[#00e092] text-[#06090e] font-bold text-xs sm:text-sm px-4 sm:px-5 py-2 sm:py-2.5 transition-all shadow-[0_0_20px_rgba(0,245,160,0.3)] hover:shadow-[0_0_25px_rgba(0,245,160,0.5)] active:scale-95"
+                className="hidden items-center justify-center rounded-xl bg-[#00f5a0] px-4 py-2 text-xs font-bold text-[#06090e] shadow-[0_0_20px_rgba(0,245,160,0.3)] transition-all hover:bg-[#00e092] hover:shadow-[0_0_25px_rgba(0,245,160,0.5)] active:scale-95 sm:inline-flex sm:px-5 sm:py-2.5 sm:text-sm"
               >
                 Create account
               </Link>
@@ -196,6 +196,15 @@ export function Navbar({ user }: { user: SessionUser | null }) {
             >
               {user ? "Go to Dashboard" : "Log in"}
             </Link>
+            {!user ? (
+              <Link
+                href="/register"
+                className="block rounded-xl bg-[#00f5a0] px-4 py-3 text-center text-sm font-bold text-[#06090e]"
+                onClick={() => setOpen(false)}
+              >
+                Create account
+              </Link>
+            ) : null}
           </div>
         </div>
       )}

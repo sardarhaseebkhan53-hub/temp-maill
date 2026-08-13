@@ -21,8 +21,8 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   try {
     const { id } = await ctx.params;
     const { box } = await authorize(req, id);
-    const detail = await getMessage(id, box.id);
     await markRead(id, true);
+    const detail = await getMessage(id, box.id);
     return ok(detail);
   } catch (e) {
     return fail(e, req);

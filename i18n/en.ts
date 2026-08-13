@@ -80,7 +80,6 @@ const en = {
     subject: "Subject",
     attachments: "Attachments",
     blockedFile: "Blocked for safety",
-    demo: "Send a sample message",
   },
   how: {
     title: "Three steps. Then you can leave.",

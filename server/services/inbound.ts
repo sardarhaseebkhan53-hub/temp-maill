@@ -185,23 +185,3 @@ async function dispatchWebhooks(userId: string | null, payload: Record<string, u
     });
   }
 }
-
-export async function deliverDemoMessage(address: string) {
-  return ingestInbound({
-    provider: "mock",
-    providerMessageId: `demo-${Date.now()}`,
-    idempotencyKey: `demo-${address}-${Date.now()}`,
-    fromAddress: "welcome@haven.email",
-    fromName: "Haven",
-    toAddresses: [address],
-    subject: "Your private inbox is ready",
-    textBody:
-      "Welcome to Haven. This message was processed by the same inbound pipeline that handles real email — sanitized, scanned, and stored with your retention policy.",
-    htmlBody:
-      "<p>Welcome to <strong>Haven</strong>.</p><p>This message was processed by the same inbound pipeline that handles real email — sanitized, scanned, and stored with your retention policy.</p><p>Try sending a message to this address from any mailbox you own.</p>",
-    headers: { "X-Haven-Demo": "1" },
-    attachments: [],
-    receivedAt: new Date(),
-    rawSize: 512,
-  });
-}

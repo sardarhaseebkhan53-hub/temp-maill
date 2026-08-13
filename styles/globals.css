@@ -75,10 +75,18 @@
   }
 
   body {
+    min-width: 0;
     background-color: #06080d;
     color: #f8fafc;
     font-feature-settings: "ss01", "cv11";
-    overflow-x: hidden;
+  }
+
+  main,
+  section,
+  article,
+  aside,
+  nav {
+    min-width: 0;
   }
 
   ::selection {
