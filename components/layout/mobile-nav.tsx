@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const items = [
   { href: "/", label: "Home", icon: Home },
   { href: "/inbox", label: "Inbox", icon: Inbox },
-  { href: "/tools", label: "Services", icon: LayoutGrid },
+  { href: "/tools", label: "Tools", icon: LayoutGrid },
   { href: "/pricing", label: "Premium", icon: Sparkles },
   { href: "/dashboard", label: "Account", icon: User },
 ];
@@ -17,7 +17,7 @@ export function MobileNav() {
   const path = usePathname();
   if (path.startsWith("/admin")) return null;
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur safe-bottom no-print">
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/10 bg-[#06080d]/95 backdrop-blur-xl safe-bottom no-print">
       <ul className="grid grid-cols-5">
         {items.map((it) => {
           const active = path === it.href || (it.href !== "/" && path.startsWith(it.href));
@@ -27,12 +27,12 @@ export function MobileNav() {
               <Link
                 href={it.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] min-h-12",
-                  active ? "text-primary" : "text-muted-foreground",
+                  "flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-medium min-h-12 transition-colors",
+                  active ? "text-[#00f5a0] font-bold" : "text-slate-400 hover:text-slate-200",
                 )}
               >
-                <Icon className="size-5" />
-                {it.label}
+                <Icon className={cn("size-4.5", active && "drop-shadow-[0_0_8px_rgba(0,245,160,0.6)]")} />
+                <span>{it.label}</span>
               </Link>
             </li>
           );

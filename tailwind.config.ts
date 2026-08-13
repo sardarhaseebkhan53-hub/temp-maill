@@ -13,11 +13,11 @@ const config: Config = {
       center: true,
       padding: {
         DEFAULT: "1rem",
-        sm: "1.5rem",
-        lg: "2rem",
+        sm: "1.25rem",
+        lg: "1.5rem",
       },
       screens: {
-        "2xl": "1400px",
+        "2xl": "1560px",
       },
     },
     extend: {
@@ -71,18 +71,15 @@ const config: Config = {
           DEFAULT: "hsl(var(--danger))",
           foreground: "hsl(var(--danger-foreground))",
         },
-        haven: {
-          50: "#f0faf8",
-          100: "#d4f1ea",
-          200: "#a9e3d6",
-          300: "#72cdbb",
-          400: "#3fb19c",
-          500: "#249681",
-          600: "#1b7869",
-          700: "#196055",
-          800: "#184d46",
-          900: "#17403b",
-          950: "#0b2523",
+        brand: {
+          teal: "#00f5a0",
+          emerald: "#10b981",
+          purple: "#8b5cf6",
+          violet: "#7c3aed",
+          indigo: "#6366f1",
+          dark: "#06080d",
+          surface: "#0c1017",
+          panel: "#0f141f",
         },
       },
       borderRadius: {
@@ -95,17 +92,13 @@ const config: Config = {
         display: ["var(--font-display)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
-      transitionTimingFunction: {
-        haven: "cubic-bezier(0.22, 1, 0.36, 1)",
-      },
-      transitionDuration: {
-        fast: "140ms",
-        base: "220ms",
-        slow: "400ms",
-      },
       boxShadow: {
+        "glow-teal": "0 0 25px -5px rgba(0, 245, 160, 0.35)",
+        "glow-teal-lg": "0 0 45px -8px rgba(0, 245, 160, 0.45)",
+        "glow-purple": "0 0 25px -5px rgba(139, 92, 246, 0.35)",
+        "glow-purple-lg": "0 0 45px -8px rgba(139, 92, 246, 0.45)",
         lift: "0 8px 24px -12px hsl(var(--primary) / 0.35)",
-        card: "0 1px 2px 0 rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12)",
+        card: "0 1px 3px 0 rgba(0, 0, 0, 0.4), 0 10px 30px -10px rgba(0, 0, 0, 0.6)",
       },
       keyframes: {
         "accordion-down": {
@@ -133,8 +126,12 @@ const config: Config = {
           "50%": { opacity: "0.65" },
         },
         float: {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-4px)" },
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-6px)" },
+        },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0px) rotate(0deg)" },
+          "50%": { transform: "translateY(-8px) rotate(2deg)" },
         },
       },
       animation: {
@@ -145,6 +142,7 @@ const config: Config = {
         "slide-up": "slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
         "pulse-soft": "pulse-soft 1.4s ease-in-out infinite",
         float: "float 4s ease-in-out infinite",
+        "float-slow": "float-slow 6s ease-in-out infinite",
       },
     },
   },

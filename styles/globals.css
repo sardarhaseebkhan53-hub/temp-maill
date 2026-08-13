@@ -4,65 +4,65 @@
 
 @layer base {
   :root {
-    --font-sans: "Source Sans 3", "Segoe UI", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
-    --font-display: "Outfit", "Avenir Next", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-    --font-mono: "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, monospace;
-    --background: 160 20% 98%;
-    --foreground: 168 24% 10%;
-    --card: 0 0% 100%;
-    --card-foreground: 168 24% 10%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 168 24% 10%;
-    --primary: 168 61% 32%;
-    --primary-foreground: 160 30% 98%;
-    --secondary: 160 14% 93%;
-    --secondary-foreground: 168 20% 16%;
-    --muted: 160 12% 94%;
-    --muted-foreground: 168 8% 38%;
-    --accent: 32 92% 56%;
-    --accent-foreground: 24 40% 12%;
+    --font-sans: "Inter", "Source Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-display: "Outfit", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+    --background: 224 45% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 35% 7%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 35% 7%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 158 100% 48%;
+    --primary-foreground: 224 71% 4%;
+    --secondary: 222 30% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 25% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 265 89% 66%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 98%;
-    --success: 152 55% 36%;
-    --success-foreground: 150 40% 98%;
+    --success: 158 100% 48%;
+    --success-foreground: 224 71% 4%;
     --warning: 38 92% 50%;
     --warning-foreground: 32 50% 12%;
     --danger: 0 72% 50%;
     --danger-foreground: 0 0% 98%;
-    --border: 164 12% 88%;
-    --input: 164 12% 88%;
-    --ring: 168 61% 32%;
+    --border: 222 20% 15%;
+    --input: 222 20% 15%;
+    --ring: 158 100% 48%;
     --radius: 0.85rem;
-    --selection: 168 50% 84%;
+    --selection: 158 100% 48%;
   }
 
   .dark {
-    --background: 168 22% 6%;
-    --foreground: 160 16% 94%;
-    --card: 168 18% 9%;
-    --card-foreground: 160 16% 94%;
-    --popover: 168 18% 9%;
-    --popover-foreground: 160 16% 94%;
-    --primary: 166 48% 52%;
-    --primary-foreground: 168 30% 8%;
-    --secondary: 168 14% 14%;
-    --secondary-foreground: 160 16% 92%;
-    --muted: 168 12% 14%;
-    --muted-foreground: 160 8% 68%;
-    --accent: 32 90% 58%;
-    --accent-foreground: 24 40% 10%;
-    --destructive: 0 62% 48%;
+    --background: 224 45% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 35% 7%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222 35% 7%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 158 100% 48%;
+    --primary-foreground: 224 71% 4%;
+    --secondary: 222 30% 12%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 25% 12%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 265 89% 66%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 98%;
-    --success: 152 45% 48%;
-    --success-foreground: 150 40% 8%;
+    --success: 158 100% 48%;
+    --success-foreground: 224 71% 4%;
     --warning: 38 90% 54%;
     --warning-foreground: 32 50% 10%;
-    --danger: 0 62% 48%;
+    --danger: 0 72% 50%;
     --danger-foreground: 0 0% 98%;
-    --border: 168 12% 18%;
-    --input: 168 12% 18%;
-    --ring: 166 48% 52%;
-    --selection: 168 30% 22%;
+    --border: 222 20% 15%;
+    --input: 222 20% 15%;
+    --ring: 158 100% 48%;
+    --selection: 158 100% 48%;
   }
 
   * {
@@ -71,19 +71,23 @@
 
   html {
     scroll-behavior: smooth;
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
+    background-color: #06080d;
+    color: #f8fafc;
     font-feature-settings: "ss01", "cv11";
+    overflow-x: hidden;
   }
 
   ::selection {
-    background: hsl(var(--selection));
+    background: rgba(0, 245, 160, 0.3);
+    color: #ffffff;
   }
 
   :focus-visible {
-    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+    @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-background;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -121,13 +125,66 @@
     background-size: 200% 100%;
     animation: shimmer 1.6s linear infinite;
   }
+
+  /* Custom glassmorphism styles */
+  .glass-card {
+    background: rgba(12, 16, 23, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .glass-card-teal {
+    background: rgba(12, 16, 23, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 245, 160, 0.25);
+    box-shadow: 0 0 35px -5px rgba(0, 245, 160, 0.08);
+  }
+
+  .glass-card-purple {
+    background: rgba(12, 16, 23, 0.9);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(139, 92, 246, 0.28);
+    box-shadow: 0 0 35px -5px rgba(139, 92, 246, 0.12);
+  }
+
+  .glow-text-teal {
+    text-shadow: 0 0 20px rgba(0, 245, 160, 0.5);
+  }
+
+  .glow-text-purple {
+    text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  }
+
+  .bg-ambient-radial {
+    background-image: 
+      radial-gradient(circle at 50% 0%, rgba(99, 102, 241, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 10% 20%, rgba(0, 245, 160, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 90% 30%, rgba(139, 92, 246, 0.07) 0%, transparent 45%);
+  }
 }
 
-/* Thin brand scrollbars, still respect OS settings */
+/* Thin brand scrollbars */
 @media (hover: hover) {
   * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.35) transparent;
+    scrollbar-color: rgba(0, 245, 160, 0.25) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 245, 160, 0.5);
   }
 }
 
