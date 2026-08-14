@@ -78,6 +78,11 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+interface ColumnInfo {
+  name: string;
+  required: boolean;
+}
+
 type Rel =
   | { kind: "many"; model: string; fk: string }
   | { kind: "one"; model: string; fk: string; owner?: boolean };
@@ -632,9 +637,39 @@ export class MiniPrisma {
     }
   }
 
+  private columnCache: Record<string, ColumnInfo[]> = {};
+
+  private columns(model: string): ColumnInfo[] {
+    const cached = this.columnCache[model];
+    if (cached) return cached;
+    const info = this.db.prepare(`PRAGMA table_info(${model})`).all() as {
+      name: string;
+      notnull: number;
+      dflt_value: unknown;
+      pk: number;
+    }[];
+    const mapped: ColumnInfo[] = info.map((c) => ({
+      name: c.name,
+      required: c.notnull === 1 && c.dflt_value == null && c.pk === 0,
+    }));
+    this.columnCache[model] = mapped;
+    return mapped;
+  }
+
   private hasColumn(model: string, name: string): boolean {
-    const info = this.db.prepare(`PRAGMA table_info(${model})`).all() as { name: string }[];
-    return info.some((c) => c.name === name);
+    return this.columns(model).some((c) => c.name === name);
+  }
+
+  /**
+   * SQLite has no `@default(now())`, so NOT NULL timestamp columns must be
+   * filled in by the client. Prisma does this from the schema; we derive the
+   * same behaviour from the table definition so that no insert can ever fail
+   * with "NOT NULL constraint failed" on a timestamp the caller did not set.
+   */
+  private requiredTimestampColumns(model: string): string[] {
+    return this.columns(model)
+      .filter((c) => c.required && (DATE_FIELDS.has(c.name) || DATE_SUFFIX.test(c.name)))
+      .map((c) => c.name);
   }
 
   private async create(model: string, data: AnyRec, include?: AnyRec): Promise<AnyRec> {
@@ -644,7 +679,11 @@ export class MiniPrisma {
     const ts = nowIso();
     if (this.hasColumn(model, "createdAt") && !row.createdAt) row.createdAt = ts;
     if (this.hasColumn(model, "updatedAt") && !row.updatedAt) row.updatedAt = ts;
-    if (model === "UserRole" && !row.assignedAt) row.assignedAt = ts;
+    // Fill any other NOT NULL timestamp column (lastSeenAt, assignedAt,
+    // receivedAt, startedAt, …) that the caller left unset.
+    for (const name of this.requiredTimestampColumns(model)) {
+      if (row[name] === undefined || row[name] === null) row[name] = ts;
+    }
 
     for (const [k, v] of Object.entries(row)) {
       if (v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date) && ("create" in (v as AnyRec) || "createMany" in (v as AnyRec))) {

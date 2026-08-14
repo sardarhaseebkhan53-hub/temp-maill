@@ -47,6 +47,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1).max(128),
+  remember: z.boolean().optional().default(true),
 });
 
 export const webhookCreateSchema = z.object({

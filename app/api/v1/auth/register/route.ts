@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     });
     const opts = sessionCookieOptions();
     (await cookies()).set(opts.name, jwt, opts);
-    return ok({ id: user.id, email: user.email }, { status: 201 });
+    return ok({ id: user.id, email: user.email, redirectTo: "/dashboard" }, { status: 201 });
   } catch (e) {
     return fail(e, req);
   }

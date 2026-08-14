@@ -130,9 +130,12 @@ export async function getCurrentUser(): Promise<{ user: SessionUser; sessionId: 
     return null;
   }
   const user = await loadSessionUser(session.userId);
-  if (!user || user.status === "BANNED" || user.status === "SUSPENDED") return user
-    ? { user, sessionId: session.id }
-    : null;
+  if (!user) return null;
+  // Banned/suspended users still resolve so callers can render an accurate
+  // message; requireUser() is what refuses them access.
+  if (user.status === "BANNED" || user.status === "SUSPENDED") {
+    return { user, sessionId: session.id };
+  }
   if (Date.now() - session.lastSeenAt.getTime() > 5 * 60_000) {
     await prisma.session.update({ where: { id: session.id }, data: { lastSeenAt: new Date() } }).catch(() => null);
   }
@@ -142,8 +145,8 @@ export async function getCurrentUser(): Promise<{ user: SessionUser; sessionId: 
 export async function requireUser() {
   const ctx = await getCurrentUser();
   if (!ctx) throw Errors.unauthorized();
-  if (ctx.user.status === "BANNED") throw Errors.forbidden();
-  if (ctx.user.status === "SUSPENDED") throw Errors.forbidden();
+  if (ctx.user.status === "BANNED") throw Errors.accountBanned();
+  if (ctx.user.status === "SUSPENDED") throw Errors.accountSuspended();
   return ctx;
 }
 
@@ -208,14 +211,16 @@ export async function authenticate(email: string, password: string, meta?: { ip?
   const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
   if (!user || !user.passwordHash) {
     await recordSecurity("login.failed", { ip: meta?.ip, metaJson: JSON.stringify({ email }) });
-    throw Errors.unauthorized();
+    throw Errors.invalidCredentials();
   }
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) {
     await recordSecurity("login.failed", { userId: user.id, ip: meta?.ip });
-    throw Errors.unauthorized();
+    throw Errors.invalidCredentials();
   }
-  if (user.status === "BANNED") throw Errors.forbidden();
+  if (user.status === "BANNED") throw Errors.accountBanned();
+  if (user.status === "SUSPENDED") throw Errors.accountSuspended();
+  if (user.status === "DELETED") throw Errors.invalidCredentials();
   await prisma.user.update({
     where: { id: user.id },
     data: { lastLoginAt: new Date(), lastLoginIp: meta?.ip },

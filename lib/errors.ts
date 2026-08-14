@@ -14,6 +14,14 @@ export class AppError extends Error {
 
 export const Errors = {
   unauthorized: () => new AppError("UNAUTHORIZED", "Authentication is required.", 401),
+  // Deliberately identical for "no such user" and "wrong password" so the
+  // endpoint cannot be used to enumerate registered email addresses.
+  invalidCredentials: () =>
+    new AppError("INVALID_CREDENTIALS", "That email and password combination is not correct.", 401),
+  accountSuspended: () =>
+    new AppError("ACCOUNT_SUSPENDED", "This account is suspended. Contact support to restore access.", 403),
+  accountBanned: () =>
+    new AppError("ACCOUNT_BANNED", "This account has been disabled.", 403),
   forbidden: () => new AppError("FORBIDDEN", "You do not have permission to do that.", 403),
   notFound: (what = "Resource") => new AppError("NOT_FOUND", `${what} was not found.`, 404),
   validation: (message: string, details?: unknown) =>
