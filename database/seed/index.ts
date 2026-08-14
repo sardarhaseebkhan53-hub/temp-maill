@@ -316,6 +316,10 @@ async function main() {
     ["i18n.default_locale", "en", "i18n", "string"],
     ["billing.default_currency", "USD", "billing", "string"],
     ["ads.enabled", "true", "ads", "bool"],
+    // Test mode ships on: real units only render once an operator adds a
+    // network client id and turns test mode off in the admin panel.
+    ["ads.test_mode", "true", "ads", "bool"],
+    ["ads.client_id", "", "ads", "string"],
     ["referral.reward_cents", "300", "billing", "number"],
     ["referral.max_rewards_per_user", "25", "billing", "number"],
     ["seo.default_title", "Haven — Temporary Email & Privacy Tools", "seo", "string"],
@@ -471,30 +475,34 @@ async function main() {
     update: { enabled: true, adapter: "generic" },
     create: { key: "internal", name: "Internal / house", adapter: "generic", enabled: true },
   });
-  await prisma.adPlacement.upsert({
-    where: { key: "home_sidebar" },
-    update: { enabled: true },
-    create: {
-      networkId: network.id,
-      key: "home_sidebar",
-      zone: "sidebar",
-      slotId: "house-home",
-      excludePremium: true,
-      enabled: true,
-    },
-  });
-  await prisma.adPlacement.upsert({
-    where: { key: "inbox_footer" },
-    update: { enabled: true },
-    create: {
-      networkId: network.id,
-      key: "inbox_footer",
-      zone: "footer",
-      slotId: "house-inbox",
-      excludePremium: true,
-      enabled: true,
-    },
-  });
+  // One placement row per canonical slot so every slot is administrable from
+  // day one. Enabled by default, but test mode keeps them as placeholders.
+  const canonicalSlots: [string, string][] = [
+    ["top_leaderboard", "header"],
+    ["hero", "hero"],
+    ["content", "content"],
+    ["rectangle", "content"],
+    ["right_rail", "rail"],
+    ["left_rail", "rail"],
+    ["mobile", "mobile"],
+    ["blog", "blog"],
+    ["tools", "tools"],
+    ["footer", "footer"],
+  ];
+  for (const [slot, zone] of canonicalSlots) {
+    await prisma.adPlacement.upsert({
+      where: { key: `slot_${slot}` },
+      update: { zone },
+      create: {
+        networkId: network.id,
+        key: `slot_${slot}`,
+        zone,
+        slotId: null,
+        excludePremium: true,
+        enabled: true,
+      },
+    });
+  }
 
   if ((await prisma.announcement.count()) === 0) {
     await prisma.announcement.create({
