@@ -475,6 +475,68 @@ async function main() {
     update: { enabled: true, adapter: "generic" },
     create: { key: "internal", name: "Internal / house", adapter: "generic", enabled: true },
   });
+  // Payment methods an operator can turn on and fill in from the admin panel.
+  // They ship disabled and empty: no credentials are ever hardcoded.
+  const paymentMethods: {
+    key: string;
+    kind: string;
+    name: string;
+    displayName: string;
+    description: string;
+    instructions: string;
+    currency: string;
+    sortOrder: number;
+  }[] = [
+    {
+      key: "stripe",
+      kind: "STRIPE",
+      name: "Stripe",
+      displayName: "Card payment",
+      description: "Pay by card. Premium activates automatically once Stripe confirms the payment.",
+      instructions: "",
+      currency: "USD",
+      sortOrder: 0,
+    },
+    {
+      key: "jazzcash",
+      kind: "MANUAL",
+      name: "JazzCash",
+      displayName: "JazzCash",
+      description: "Send the amount to the JazzCash account below, then submit your transaction ID.",
+      instructions: "Open JazzCash, send the exact amount, and paste the TID from your receipt.",
+      currency: "PKR",
+      sortOrder: 1,
+    },
+    {
+      key: "easypaisa",
+      kind: "MANUAL",
+      name: "Easypaisa",
+      displayName: "Easypaisa",
+      description: "Send the amount to the Easypaisa account below, then submit your transaction ID.",
+      instructions: "Open Easypaisa, send the exact amount, and paste the TID from your receipt.",
+      currency: "PKR",
+      sortOrder: 2,
+    },
+    {
+      key: "bank_transfer",
+      kind: "MANUAL",
+      name: "Bank transfer",
+      displayName: "Bank transfer",
+      description: "Transfer to the bank account below, then submit your reference number.",
+      instructions: "Use your account email as the transfer reference where possible.",
+      currency: "PKR",
+      sortOrder: 3,
+    },
+  ];
+  for (const method of paymentMethods) {
+    const existing = await prisma.paymentMethod.findUnique({ where: { key: method.key } });
+    if (!existing) {
+      await prisma.paymentMethod.create({
+        data: { ...method, enabled: false, status: "ACTIVE", planKeysJson: "[]" },
+      });
+    }
+  }
+
   // One placement row per canonical slot so every slot is administrable from
   // day one. Enabled by default, but test mode keeps them as placeholders.
   const canonicalSlots: [string, string][] = [

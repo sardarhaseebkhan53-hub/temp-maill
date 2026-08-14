@@ -29,6 +29,8 @@ export interface PaymentProvider {
     providerSubscriptionId?: string;
     status?: string;
     userId?: string;
+    planKey?: string;
+    interval?: string;
     amountCents?: number;
     currency?: string;
     raw: unknown;
@@ -78,7 +80,7 @@ class StripePaymentProvider implements PaymentProvider {
     const event = stripe.webhooks.constructEvent(raw, sig, env.STRIPE_WEBHOOK_SECRET);
     const obj = event.data.object as {
       id?: string;
-      metadata?: { userId?: string };
+      metadata?: { userId?: string; planKey?: string; interval?: string };
       amount_total?: number;
       currency?: string;
       subscription?: string;
@@ -89,7 +91,11 @@ class StripePaymentProvider implements PaymentProvider {
       providerPaymentId: obj.id,
       providerSubscriptionId: typeof obj.subscription === "string" ? obj.subscription : undefined,
       status: obj.payment_status,
+      // The plan comes from the metadata we set when creating the session, so
+      // the purchased plan is never taken from anything the browser sent.
       userId: obj.metadata?.userId,
+      planKey: obj.metadata?.planKey,
+      interval: obj.metadata?.interval,
       amountCents: obj.amount_total,
       currency: obj.currency?.toUpperCase(),
       raw: event,

@@ -1,4 +1,3 @@
-import "server-only";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { getSetting, getSettingBool } from "@/lib/settings";

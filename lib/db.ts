@@ -59,6 +59,7 @@ export type DbClient = MiniPrisma & {
   subscription: Delegate;
   payment: Delegate;
   manualPayment: Delegate;
+  paymentMethod: Delegate;
   coupon: Delegate;
   couponRedemption: Delegate;
   referral: Delegate;

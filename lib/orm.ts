@@ -311,6 +311,7 @@ const MODELS = [
   "Subscription",
   "Payment",
   "ManualPayment",
+  "PaymentMethod",
   "Coupon",
   "CouponRedemption",
   "Referral",
