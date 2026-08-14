@@ -7,8 +7,10 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "Inbox — Haven",
-  description: "Your current temporary inbox.",
+  description:
+    "Your current temporary inbox. Messages sent to your disposable address appear here in real time.",
   path: "/inbox",
+  // Session-specific: the content differs per visitor and must never be indexed.
   noindex: true,
 });
 

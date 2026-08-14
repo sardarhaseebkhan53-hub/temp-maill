@@ -5,8 +5,9 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "SMS Receiver — Capture Test Texts",
-  description: "A temporary SMS inbox for verification-code testing on owned accounts and QA environments.",
+  title: "Receive SMS Online — Temporary SMS Inbox",
+  description:
+    "Receive SMS online in a temporary inbox. Capture verification texts on a short-lived number for QA and for accounts you own, then release the number.",
   path: "/sms-receiver",
 });
 
@@ -15,6 +16,11 @@ export default async function Page() {
 
   return (
     <PageShell
+      path="/sms-receiver"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "SMS receiver", path: "/sms-receiver" },
+      ]}
       eyebrow="Temporary SMS"
       title="SMS receiver for tests you own"
       description="Capture inbound SMS on a short-lived number and release it when the test is done. Numbers come from a provider adapter — Twilio, Vonage, or a development pool."

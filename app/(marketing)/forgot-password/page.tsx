@@ -4,7 +4,8 @@ import { AuthShell } from "@/components/features/auth-shell";
 
 export const metadata = buildMetadata({
   title: "Forgot password — Haven",
-  description: "Password reset is delivered only when outbound SMTP is configured.",
+  description:
+    "Recover access to your Haven account. Self-service password reset requires outbound email to be configured on this deployment.",
   path: "/forgot-password",
   noindex: true,
 });

@@ -8,7 +8,8 @@ import { getCurrentUser, hasPermission } from "@/lib/auth";
 
 export const metadata = buildMetadata({
   title: "Log in — Haven",
-  description: "Log in to Haven.",
+  description:
+    "Log in to your Haven account to manage saved inboxes, aliases, API keys, and billing.",
   path: "/login",
   noindex: true,
 });

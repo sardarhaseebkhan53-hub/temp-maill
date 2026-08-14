@@ -2,8 +2,9 @@ import { SeoLanding } from "@/components/features/seo-landing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Private Email — Minimize What You Leave Behind",
-  description: "Private, short-lived email with honest limits. We minimize retention; we do not claim anonymity.",
+  title: "Private Temporary Email — Honest About the Limits",
+  description:
+    "Private, short-lived email that minimises what you leave behind. We explain exactly what a temporary inbox protects and what it cannot: this is not anonymity.",
   path: "/private-email",
 });
 

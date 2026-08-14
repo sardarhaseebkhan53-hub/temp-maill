@@ -4,8 +4,9 @@ import { buildMetadata } from "@/lib/seo";
 import { PageShell } from "@/components/layout/page-shell";
 
 export const metadata = buildMetadata({
-  title: "Help Center — Haven",
-  description: "Get started with disposable inboxes, accounts, and the API.",
+  title: "Help Center — Haven Temporary Email",
+  description:
+    "Guides for getting started with Haven: using a disposable inbox, managing an account, calling the developer API, and reporting abuse.",
   path: "/help",
 });
 
@@ -20,6 +21,11 @@ const topics: [string, string, string][] = [
 export default function HelpPage() {
   return (
     <PageShell
+      path="/help"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Help center", path: "/help" },
+      ]}
       eyebrow="Help center"
       title="Get started with Haven"
       description="Short guides for the inbox, accounts, and the developer API."

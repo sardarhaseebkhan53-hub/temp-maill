@@ -5,9 +5,9 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "Developer API — Haven",
+  title: "Developer API — Temporary Email & Inbox Endpoints",
   description:
-    "Authenticate with hashed API keys. Create mailboxes, read messages, and subscribe to webhooks.",
+    "Haven's HTTP API for developers: create disposable mailboxes, read messages, download attachments, and subscribe to webhooks using hashed API keys.",
   path: "/developer-api",
 });
 
@@ -66,6 +66,11 @@ export default async function DeveloperApiPage() {
 
   return (
     <PageShell
+      path="/developer-api"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Developer API", path: "/developer-api" },
+      ]}
       eyebrow="Developer API"
       title="Haven API"
       description="Provision disposable inboxes from the tools you already run. Keys are hashed at rest, prefixed tmp_live_ / tmp_test_, and rate-limited per key."

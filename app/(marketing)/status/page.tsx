@@ -3,8 +3,9 @@ import { PageShell } from "@/components/layout/page-shell";
 import { pingDb } from "@/lib/db";
 
 export const metadata = buildMetadata({
-  title: "Status — Haven",
-  description: "Public service status for Haven.",
+  title: "Service Status — Haven Temporary Email",
+  description:
+    "Live operational status for the Haven temporary email service, including the web application and database, checked on every request.",
   path: "/status",
 });
 
@@ -23,6 +24,11 @@ export default async function StatusPage() {
 
   return (
     <PageShell
+      path="/status"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Status", path: "/status" },
+      ]}
       eyebrow="Status"
       title={allOk ? "All systems normal" : "Degraded service"}
       description="Live checks, refreshed on every request."

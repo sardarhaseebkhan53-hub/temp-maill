@@ -2,8 +2,9 @@ import { SeoLanding } from "@/components/features/seo-landing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Temp Mail — Fast Disposable Inbox",
-  description: "A fast temp mail inbox with live delivery, copy, QR, and a countdown that reflects server state.",
+  title: "Temp Mail — Free Fast Disposable Inbox",
+  description:
+    "Free temp mail with no waiting room. Get a disposable inbox with live delivery, one-click copy, QR sharing, and a countdown that reflects real server state.",
   path: "/temp-mail",
 });
 

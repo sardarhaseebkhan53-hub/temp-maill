@@ -8,9 +8,9 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "Pricing — Haven",
+  title: "Pricing — Ad-Free Temporary Email & Custom Domains",
   description:
-    "Free disposable inboxes, plus Pro, Developer, and Business plans. Prices live in the database.",
+    "Haven pricing: a genuinely free disposable inbox, plus Pro, Developer, and Business plans adding an ad-free experience, custom domains, longer retention, and API access.",
   path: "/pricing",
 });
 
@@ -22,6 +22,11 @@ export default async function PricingPage() {
 
   return (
     <PageShell
+      path="/pricing"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Pricing", path: "/pricing" },
+      ]}
       eyebrow="Pricing"
       title="Stay only as long as you need"
       description="The free inbox is genuinely useful. Paid plans add time, domains, aliases, and API room — and remove every advertisement."

@@ -8,9 +8,9 @@ import { RailAds } from "@/components/ads/rail-ads";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "Blog — Haven",
+  title: "Blog — Temporary Email & Online Privacy Guides",
   description:
-    "Notes on disposable mail, retention, and using privacy tools without magical thinking.",
+    "Practical guides on temporary email, disposable inboxes, email security, and online privacy — written without magical thinking or overblown claims.",
   path: "/blog",
 });
 

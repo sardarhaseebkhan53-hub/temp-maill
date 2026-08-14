@@ -3,6 +3,7 @@ import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/db";
 import { purgeLegacyInjectedMessages } from "../../server/services/legacy-data-cleanup";
+import { blogCategories, blogPosts } from "./blog-content";
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16);
@@ -429,22 +430,37 @@ async function main() {
     });
   }
 
-  if ((await prisma.blogCategory.count()) === 0) {
-    const cat = await prisma.blogCategory.create({
-      data: { slug: "privacy", name: "Privacy", description: "Practical privacy notes" },
-    });
+  // Editorial content: categories and long-form explainers. Existing posts are
+  // never overwritten, so operator edits survive re-seeding.
+  const categoryIds = new Map<string, string>();
+  for (const category of blogCategories) {
+    const existing = await prisma.blogCategory.findUnique({ where: { slug: category.slug } });
+    const row =
+      existing ??
+      (await prisma.blogCategory.create({
+        data: { slug: category.slug, name: category.name, description: category.description },
+      }));
+    categoryIds.set(category.slug, row.id);
+  }
+
+  let publishedOffset = 0;
+  for (const post of blogPosts) {
+    if (await prisma.blogPost.findUnique({ where: { slug: post.slug } })) continue;
+    // Stagger publication dates so the feed is not one identical timestamp.
+    publishedOffset += 1;
     await prisma.blogPost.create({
       data: {
-        slug: "why-disposable-inboxes-exist",
-        title: "Why disposable inboxes exist",
-        excerpt: "A short field guide to using temporary email without pretending it makes you invisible.",
-        contentHtml: blogPostHtml(),
-        contentMd: "Why disposable inboxes exist",
+        slug: post.slug,
+        title: post.title,
+        excerpt: post.excerpt,
+        contentHtml: post.html,
+        contentMd: post.excerpt,
         status: "PUBLISHED",
-        publishedAt: new Date(),
-        categoryId: cat.id,
-        seoTitle: "Why disposable inboxes exist — Haven",
-        seoDescription: "When a temporary inbox is the right tool, and when it is not.",
+        authorName: "Haven Editorial",
+        publishedAt: new Date(Date.now() - publishedOffset * 3 * 86400000),
+        categoryId: categoryIds.get(post.category),
+        seoTitle: post.seoTitle,
+        seoDescription: post.seoDescription,
       },
     });
   }
@@ -662,13 +678,6 @@ function securityHtml() {
     `<p>Inbound HTML is sanitized and rendered in a sandboxed frame. Attachments are allowlisted and optionally scanned. Sessions are httpOnly cookies. API keys are hashed. Payments are never trusted from the browser.</p>
 <p>Report vulnerabilities via the contact form with the topic “Security”.</p>`,
   );
-}
-
-function blogPostHtml() {
-  return `<article class="prose"><h1>Why disposable inboxes exist</h1>
-<p>Most of the internet still treats an email address as a permanent identity. That is convenient for the sender and expensive for you: newsletters you never wanted, credential stuffing against a mailbox you still need, and a paper trail that outlives the reason you signed up.</p>
-<p>A temporary inbox is a narrow tool. It is useful when you need a receipt, a confirmation link, or a one-off verification on a site you do not trust with your long-term address. It is a poor tool for banking, government identity, or anything you must prove later.</p>
-<p>Haven is built around that distinction. Addresses appear instantly, messages are sanitized before they reach the browser, and everything expires on a published schedule. We do not market this as anonymity. We market it as a shorter memory.</p></article>`;
 }
 
 main()

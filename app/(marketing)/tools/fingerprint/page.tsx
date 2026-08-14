@@ -5,8 +5,9 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "Browser Fingerprint & Tracker Check — Haven",
-  description: "See a few signals your browser exposes. Educational, not a deanonymization service.",
+  title: "Browser Fingerprint Check — What Your Browser Reveals",
+  description:
+    "See some of the signals your browser exposes to every site you visit. An educational privacy tool that stores nothing and makes no deanonymization claims.",
   path: "/tools/fingerprint",
 });
 
@@ -15,6 +16,12 @@ export default async function Page() {
 
   return (
     <PageShell
+      path="/tools/fingerprint"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Privacy tools", path: "/tools" },
+        { name: "Browser fingerprint", path: "/tools/fingerprint" },
+      ]}
       eyebrow="Privacy tool"
       title="What this browser reveals"
       description="A small educational panel. It does not claim to uniquely identify you and it does not store a fingerprint."

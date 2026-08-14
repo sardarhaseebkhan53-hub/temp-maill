@@ -5,8 +5,9 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "FAQ — Haven",
-  description: "Answers about disposable email, retention, safety, and billing.",
+  title: "Temporary Email FAQ — Common Questions Answered",
+  description:
+    "How temporary email works, how long a disposable address lasts, whether you can receive verification codes, what happens at expiry, and how Haven handles privacy.",
   path: "/faq",
 });
 
@@ -18,6 +19,11 @@ export default async function FaqPage() {
 
   return (
     <PageShell
+      path="/faq"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "FAQ", path: "/faq" },
+      ]}
       eyebrow="Support"
       title="Frequently asked questions"
       description="Answers about disposable email, retention, safety, and billing."

@@ -2,8 +2,9 @@ import { SeoLanding } from "@/components/features/seo-landing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "10 Minute Mail — Short-Lived Inbox",
-  description: "A ten-minute-style disposable inbox. The default lifetime is a system setting, not a slogan.",
+  title: "10 Minute Mail — Free Short-Lived Email Inbox",
+  description:
+    "A ten-minute disposable email inbox, free and instant. The lifetime is a real server setting you can extend, not a slogan printed on the page.",
   path: "/10-minute-mail",
 });
 

@@ -2,20 +2,41 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, User } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { buildMetadata } from "@/lib/seo";
+import {
+  articleSchema,
+  breadcrumbSchema,
+  buildMetadata,
+  graph,
+  webPageSchema,
+} from "@/lib/seo";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { RailAds } from "@/components/ads/rail-ads";
 import { resolveAdSlots } from "@/server/services/ads";
-import { splitHtmlForInContentAd } from "@/lib/content";
+import { splitHtmlForInContentAd, stripLeadingH1 } from "@/lib/content";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const post = await prisma.blogPost.findUnique({ where: { slug } });
-  if (!post) return {};
+  const post = await prisma.blogPost.findUnique({ where: { slug }, include: { category: true } });
+  if (!post || post.status !== "PUBLISHED") {
+    return buildMetadata({
+      title: "Article not found — Haven",
+      description: "This article is not available.",
+      path: `/blog/${slug}`,
+      noindex: true,
+    });
+  }
   return buildMetadata({
     title: post.seoTitle || post.title,
     description: post.seoDescription || post.excerpt,
     path: `/blog/${slug}`,
+    type: "article",
+    image: post.coverImage || undefined,
+    imageAlt: post.title,
+    publishedTime: post.publishedAt ? new Date(post.publishedAt).toISOString() : undefined,
+    modifiedTime: post.updatedAt ? new Date(post.updatedAt).toISOString() : undefined,
+    authors: post.authorName ? [post.authorName] : undefined,
+    section: post.category?.name ?? undefined,
   });
 }
 
@@ -36,9 +57,15 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
     resolveAdSlots(["TOP_LEADERBOARD", "BLOG", "RECTANGLE", "CONTENT"]),
   ]);
 
+  const crumbs = [
+    { name: "Home", path: "/" },
+    { name: "Blog", path: "/blog" },
+    { name: post.title, path: `/blog/${slug}` },
+  ];
+
   // The in-content ad is injected at a paragraph boundary so it never splits
   // a sentence or interrupts a list.
-  const [firstHalf, secondHalf] = splitHtmlForInContentAd(post.contentHtml);
+  const [firstHalf, secondHalf] = splitHtmlForInContentAd(stripLeadingH1(post.contentHtml));
   const relatedPosts = related.filter((item) => item.id !== post.id).slice(0, 3);
 
   return (
@@ -46,13 +73,38 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       <RailAds />
       <div className="relative min-h-screen min-w-0 overflow-x-clip bg-[#06080d] bg-ambient-radial pb-16 text-slate-200">
         <div className="mx-auto w-full max-w-[1480px] min-w-0 px-3 pt-6 sm:px-5">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={graph(
+              webPageSchema({
+                path: `/blog/${slug}`,
+                name: post.title,
+                description: post.excerpt,
+                breadcrumb: true,
+              }),
+              breadcrumbSchema(crumbs, `/blog/${slug}`),
+              articleSchema({
+                path: `/blog/${slug}`,
+                headline: post.title,
+                description: post.excerpt,
+                image: post.coverImage || undefined,
+                author: post.authorName || "Haven Editorial",
+                published: post.publishedAt ? new Date(post.publishedAt).toISOString() : null,
+                modified: post.updatedAt ? new Date(post.updatedAt).toISOString() : null,
+                section: post.category?.name ?? null,
+              }),
+            )}
+          />
+
           <AdSlot slot="TOP_LEADERBOARD" resolved={ads.TOP_LEADERBOARD} />
 
           <div className="mt-6 grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
             <article className="min-w-0">
+              <Breadcrumbs crumbs={crumbs} />
+
               <Link
                 href="/blog"
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 transition-colors hover:text-[#00f5a0]"
+                className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 transition-colors hover:text-[#00f5a0]"
               >
                 <ArrowLeft className="size-3.5" aria-hidden="true" />
                 All articles

@@ -10,13 +10,21 @@ import { getOrCreateGuestMailbox, listDomainsForViewer } from "@/server/services
 import { publicStats } from "@/server/services/stats";
 import { prisma } from "@/lib/db";
 import { resolveAdSlots } from "@/server/services/ads";
-import { buildMetadata, jsonLd, absoluteUrl } from "@/lib/seo";
+import {
+  buildMetadata,
+  faqSchema,
+  graph,
+  organizationSchema,
+  softwareApplicationSchema,
+  websiteSchema,
+} from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Haven — Your Private Inbox. Instantly.",
+  title: "Temporary Email — Free Disposable Inbox | Haven",
   description:
-    "Create a temporary email address in seconds. No signup. No spam. HTML is sanitized before you see it, and inboxes auto-delete.",
+    "Create a free temporary email address instantly. Receive email in a private disposable inbox with automatic expiry, real-time delivery and no signup required.",
   path: "/",
+  imageAlt: "Haven temporary email — a free disposable inbox",
 });
 
 const trustBadges = [
@@ -57,26 +65,15 @@ export default async function HomePage() {
     <div className="relative min-h-screen min-w-0 overflow-x-clip bg-[#06080d] bg-ambient-radial pb-16 text-slate-200">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={jsonLd({
-          "@context": "https://schema.org",
-          "@graph": [
-            { "@type": "Organization", name: "Haven", url: absoluteUrl("/") },
-            {
-              "@type": "WebApplication",
-              name: "Haven Temporary Email",
-              applicationCategory: "UtilitiesApplication",
-              offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-            },
-            {
-              "@type": "FAQPage",
-              mainEntity: faqs.map((faq) => ({
-                "@type": "Question",
-                name: faq.question,
-                acceptedAnswer: { "@type": "Answer", text: faq.answer },
-              })),
-            },
-          ],
-        })}
+        dangerouslySetInnerHTML={graph(
+          organizationSchema(),
+          websiteSchema(),
+          softwareApplicationSchema(),
+          // Only emitted when the questions are actually rendered below.
+          faqs.length
+            ? faqSchema(faqs.map((faq) => ({ question: faq.question, answer: faq.answer })))
+            : null,
+        )}
       />
 
       <RailAds />
@@ -95,13 +92,13 @@ export default async function HomePage() {
             </div>
 
             <h1 className="mt-4 font-display text-[2rem] font-extrabold leading-[1.05] tracking-tight text-white sm:text-5xl">
-              Your private inbox.
-              <span className="block text-[#00f5a0] glow-text-teal">Instantly.</span>
+              Your private temporary email inbox,
+              <span className="block text-[#00f5a0] glow-text-teal">instantly.</span>
             </h1>
 
             <p className="mt-4 max-w-md text-sm leading-relaxed text-slate-400">
-              Create a secure, disposable email address in seconds. No signup. No spam. No
-              unnecessary tracking.
+              Create a free disposable email address in seconds. Receive mail in real time, read it
+              safely, and let it expire. No signup, no spam, no unnecessary tracking.
             </p>
 
             <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap">
@@ -161,10 +158,15 @@ export default async function HomePage() {
 
         {/* ── How it works ─────────────────────────────────────────────── */}
         <Reveal asChild>
-          <section className="rounded-2xl border border-white/[0.08] bg-[#0c1017]/95 p-5 shadow-xl backdrop-blur-xl sm:p-6">
+          <section
+            id="how-it-works"
+            className="scroll-mt-24 rounded-2xl border border-white/[0.08] bg-[#0c1017]/95 p-5 shadow-xl backdrop-blur-xl sm:p-6"
+          >
             <div className="mb-4">
-              <h2 className="font-display text-lg font-bold tracking-tight text-white">How it works</h2>
-              <p className="text-xs text-slate-400">Private email in three simple steps</p>
+              <h2 className="font-display text-lg font-bold tracking-tight text-white">
+                How temporary email works
+              </h2>
+              <p className="text-xs text-slate-400">A private disposable inbox in three steps</p>
             </div>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {howItWorks.map(([step, title, description]) => (
@@ -224,6 +226,110 @@ export default async function HomePage() {
         </Reveal>
 
         <AdSlot slot="CONTENT" resolved={ads.CONTENT} />
+
+        {/* ── Explanatory content for search intent ────────────────────── */}
+        <Reveal asChild>
+          <section
+            id="why-temporary-email"
+            className="grid min-w-0 scroll-mt-24 gap-5 rounded-2xl border border-white/[0.08] bg-[#0c1017]/85 p-5 sm:p-7 lg:grid-cols-2"
+          >
+            <div className="min-w-0">
+              <h2 className="font-display text-lg font-bold tracking-tight text-white">
+                Why use a temporary email?
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                A disposable email address absorbs the mail you do not want tied to your real
+                identity. It is useful whenever an address is demanded but a relationship is not.
+              </p>
+              <ul className="mt-4 space-y-2.5">
+                {[
+                  ["Protect your primary inbox", "Keep signups, receipts, and one-off downloads out of the mailbox you actually read."],
+                  ["Avoid unwanted marketing", "When the address expires, the newsletter has nowhere left to arrive."],
+                  ["Test software safely", "QA and developers can create a fresh inbox per test run instead of reusing a personal address."],
+                  ["Receive verification codes", "Confirm an account you own without handing over a permanent address."],
+                ].map(([title, copy]) => (
+                  <li key={title} className="flex min-w-0 items-start gap-2.5">
+                    <Check className="mt-0.5 size-3.5 shrink-0 text-[#00f5a0]" aria-hidden="true" />
+                    <span className="min-w-0 text-xs leading-relaxed text-slate-300">
+                      <strong className="font-semibold text-white">{title}.</strong> {copy}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="min-w-0">
+              <h2 className="font-display text-lg font-bold tracking-tight text-white">
+                What a disposable inbox is not
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-slate-400">
+                We would rather be useful than oversell. A temporary email address reduces the data
+                you leave behind — it does not make you anonymous.
+              </p>
+              <ul className="mt-4 space-y-2.5 text-xs leading-relaxed text-slate-300">
+                <li className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  Mail sent to a Haven address passes through Haven&apos;s servers, so it is not
+                  end-to-end encrypted and is not suitable for confidential material.
+                </li>
+                <li className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  Addresses are short-lived by design. Never use one to register something you
+                  intend to keep, or to recover an account later.
+                </li>
+                <li className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+                  Haven is not for defeating another service&apos;s anti-fraud controls or creating
+                  accounts at scale. See our{" "}
+                  <Link href="/acceptable-use" className="font-medium text-[#00f5a0] hover:underline">
+                    acceptable use policy
+                  </Link>
+                  .
+                </li>
+              </ul>
+              <p className="mt-4 text-xs text-slate-400">
+                Read more in{" "}
+                <Link href="/blog" className="font-medium text-[#00f5a0] hover:underline">
+                  the Haven blog
+                </Link>{" "}
+                or compare{" "}
+                <Link href="/disposable-email" className="font-medium text-[#00f5a0] hover:underline">
+                  disposable email
+                </Link>{" "}
+                and{" "}
+                <Link href="/temporary-inbox" className="font-medium text-[#00f5a0] hover:underline">
+                  temporary inbox
+                </Link>{" "}
+                usage.
+              </p>
+            </div>
+          </section>
+        </Reveal>
+
+        {/* ── Feature overview with internal links ─────────────────────── */}
+        <Reveal asChild>
+          <section id="features" className="min-w-0 scroll-mt-24">
+            <h2 className="mb-3 font-display text-lg font-bold tracking-tight text-white">
+              Temporary email features
+            </h2>
+            <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {([
+                ["/temporary-email-generator", "Temporary email generator", "Generate a random or custom address on any available Haven domain."],
+                ["/temporary-inbox", "Real-time inbox", "Messages stream in over SSE, with a polling fallback if the stream drops."],
+                ["/temporary-email-api", "Developer API", "Create inboxes and read mail programmatically with hashed API keys."],
+                ["/temporary-phone", "Temporary SMS", "Short-lived phone numbers for verification testing on accounts you own."],
+              ] as const).map(([href, title, copy]) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="group flex min-w-0 flex-col rounded-2xl border border-white/[0.07] bg-[#0c1017]/85 p-4 transition-colors hover:border-[#00f5a0]/25"
+                >
+                  <h3 className="text-xs font-bold text-white transition-colors group-hover:text-[#00f5a0]">
+                    {title}
+                  </h3>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-slate-400">{copy}</p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </Reveal>
 
         {/* ── Premium ──────────────────────────────────────────────────── */}
         <Reveal asChild>

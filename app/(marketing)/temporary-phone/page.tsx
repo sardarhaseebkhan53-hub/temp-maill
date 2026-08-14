@@ -5,9 +5,9 @@ import { AdSlot } from "@/components/ads/ad-slot";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "Temporary Phone Number — SMS Receiver",
+  title: "Temporary Phone Number — Disposable SMS Verification",
   description:
-    "Receive SMS for QA and personal privacy on accounts you own. Not for defeating third-party anti-fraud controls.",
+    "Get a temporary phone number and receive SMS verification codes online. For QA, developer testing, and privacy on accounts you own.",
   path: "/temporary-phone",
 });
 
@@ -16,6 +16,11 @@ export default async function Page() {
 
   return (
     <PageShell
+      path="/temporary-phone"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Temporary SMS", path: "/temporary-phone" },
+      ]}
       eyebrow="Temporary SMS"
       title="Temporary phone numbers"
       description="For QA, developer testing, and personal privacy on accounts you own — not for mass fake-account creation or defeating someone else's anti-fraud controls."

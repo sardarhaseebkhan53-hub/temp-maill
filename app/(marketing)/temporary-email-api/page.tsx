@@ -2,8 +2,9 @@ import { SeoLanding } from "@/components/features/seo-landing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Temporary Email API",
-  description: "HTTP API to create disposable mailboxes, list messages, and receive webhooks. Keys are hashed at rest.",
+  title: "Temporary Email API — Disposable Inbox Endpoints",
+  description:
+    "A temporary email API for developers. Create disposable mailboxes, list and read messages, download attachments, and receive webhooks. Keys are hashed at rest.",
   path: "/temporary-email-api",
 });
 

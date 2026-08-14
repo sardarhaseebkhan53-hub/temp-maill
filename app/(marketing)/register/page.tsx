@@ -6,8 +6,11 @@ import { getCurrentUser, hasPermission } from "@/lib/auth";
 
 export const metadata = buildMetadata({
   title: "Create account — Haven",
-  description: "Optional Haven account for saved inboxes, aliases, and API keys.",
+  description:
+    "Create an optional Haven account for saved inboxes, aliases, API keys, and billing. The temporary email service works without one.",
   path: "/register",
+  // Auth surface: useful to people, not to search results.
+  noindex: true,
 });
 
 export default async function RegisterPage() {

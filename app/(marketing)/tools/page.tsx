@@ -8,8 +8,9 @@ import { RailAds } from "@/components/ads/rail-ads";
 import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
-  title: "Privacy Tools — Haven",
-  description: "Temporary email, SMS, breach hints, and a browser fingerprint check.",
+  title: "Online Privacy Tools — Temporary Email, SMS & More",
+  description:
+    "Free online privacy tools from Haven: temporary email, disposable inboxes, temporary SMS, a breach hint checker, and a browser fingerprint report.",
   path: "/tools",
 });
 
@@ -26,6 +27,11 @@ export default async function ToolsPage() {
     <>
       <RailAds />
       <PageShell
+      path="/tools"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Privacy tools", path: "/tools" },
+      ]}
         eyebrow="Privacy tools"
         title="Tools that respect your inbox"
         description="Haven is a platform. Temporary email ships first; every other tool registers as a service rather than one-off plumbing."

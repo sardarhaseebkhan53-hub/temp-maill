@@ -3,14 +3,20 @@ import { ContactForm } from "@/components/features/contact-form";
 import { PageShell } from "@/components/layout/page-shell";
 
 export const metadata = buildMetadata({
-  title: "Contact — Haven",
-  description: "Contact Haven about product, abuse, or security.",
+  title: "Contact Haven — Support, Abuse & Security",
+  description:
+    "Get in touch with the Haven team about product questions, billing, abuse reports, or responsible security disclosure. We reply from a monitored queue.",
   path: "/contact",
 });
 
 export default function ContactPage() {
   return (
     <PageShell
+      path="/contact"
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: "Contact", path: "/contact" },
+      ]}
       eyebrow="Contact"
       title="Talk to us"
       description="Product questions, abuse reports, and security notes. We do not need a life story."

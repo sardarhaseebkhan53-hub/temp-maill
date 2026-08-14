@@ -1,8 +1,14 @@
 import { cn } from "@/lib/utils";
+import { Breadcrumbs } from "@/components/layout/breadcrumbs";
+import { breadcrumbSchema, graph, webPageSchema, type Crumb } from "@/lib/seo";
 
 /**
  * Shared dark page frame for the public content pages so blog, tools, pricing
  * and the SEO landers all share the homepage's visual language.
+ *
+ * When `crumbs` and `path` are supplied it also renders the matching
+ * WebPage + BreadcrumbList structured data, keeping schema and visible
+ * navigation in sync.
  */
 export function PageShell({
   eyebrow,
@@ -11,6 +17,9 @@ export function PageShell({
   children,
   aside,
   className,
+  crumbs,
+  path,
+  extraSchema,
 }: {
   eyebrow?: string;
   title: string;
@@ -18,11 +27,37 @@ export function PageShell({
   children: React.ReactNode;
   aside?: React.ReactNode;
   className?: string;
+  crumbs?: Crumb[];
+  path?: string;
+  extraSchema?: unknown[];
 }) {
+  const emitSchema = Boolean(path && crumbs && crumbs.length > 1);
+
   return (
     <div className="relative min-h-screen min-w-0 overflow-x-clip bg-[#06080d] bg-ambient-radial pb-16 text-slate-200">
+      {emitSchema ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={graph(
+            webPageSchema({
+              path: path!,
+              name: title,
+              description: description ?? "",
+              breadcrumb: true,
+            }),
+            breadcrumbSchema(crumbs!, path!),
+            ...(extraSchema ?? []),
+          )}
+        />
+      ) : null}
+
       <div className={cn("mx-auto w-full max-w-[1480px] min-w-0 px-3 pt-6 sm:px-5", className)}>
         <header className="mb-6 min-w-0">
+          {crumbs && crumbs.length > 1 ? (
+            <div className="mb-3">
+              <Breadcrumbs crumbs={crumbs} />
+            </div>
+          ) : null}
           {eyebrow ? (
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#00f5a0]">
               {eyebrow}

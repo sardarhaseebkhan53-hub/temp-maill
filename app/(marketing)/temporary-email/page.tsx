@@ -2,7 +2,7 @@ import { SeoLanding } from "@/components/features/seo-landing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Temporary Email — Instant Disposable Address",
+  title: "Temporary Email Address — Free Instant Inbox",
   description:
     "Generate a temporary email address on page load. Receive mail in real time, read it in a sandboxed viewer, and let it expire.",
   path: "/temporary-email",
