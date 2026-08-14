@@ -224,4 +224,4 @@ export function AdminAdsPanel({
 }
 
 const fieldClass =
-  "w-full min-w-0 rounded-lg border border-white/10 bg-[#070a10] px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-[#00f5a0]/60 focus:outline-none";
+  "w-full min-w-0 rounded-lg border border-white/10 bg-[#070a10] px-3 py-2 text-base sm:text-sm text-white placeholder:text-slate-600 focus:border-[#00f5a0]/60 focus:outline-none";

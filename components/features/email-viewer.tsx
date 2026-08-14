@@ -69,7 +69,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={() => setStarred((value) => !value)}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-amber-400"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-amber-400"
               title="Star email"
               aria-pressed={starred}
             >
@@ -78,7 +78,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={() => toast.info("Reply is disabled on temporary inboxes")}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
               title="Reply"
             >
               <Reply className="size-4" />
@@ -86,7 +86,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={() => toast.info("Forward is a Pro feature")}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
               title="Forward"
             >
               <Share2 className="size-4" />
@@ -101,7 +101,7 @@ export function EmailViewer({
                   toast.error("Could not copy message text");
                 }
               }}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
               title="Copy text"
             >
               <Copy className="size-4" />
@@ -109,7 +109,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={onDelete}
-              className="rounded-lg p-1.5 transition-colors hover:bg-red-500/20 hover:text-red-400"
+              className="rounded-lg p-2.5 transition-colors hover:bg-red-500/20 hover:text-red-400 lg:p-1.5"
               title="Delete email"
             >
               <Trash2 className="size-4" />
@@ -119,7 +119,7 @@ export function EmailViewer({
               <button
                 type="button"
                 onClick={() => setShowMoreMenu((value) => !value)}
-                className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+                className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
                 title="More actions"
                 aria-expanded={showMoreMenu}
               >
@@ -263,7 +263,7 @@ export function EmailViewer({
                 {!attachment.blocked ? (
                   <a
                     href={`/api/v1/messages/${message.id}/attachments/${attachment.id}?token=${mailboxToken}`}
-                    className="shrink-0 rounded-lg bg-white/[0.06] p-1.5 transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0]"
+                    className="shrink-0 rounded-lg bg-white/[0.06] p-2.5 transition-colors lg:p-1.5 hover:bg-[#00f5a0]/20 hover:text-[#00f5a0]"
                     download
                     title={`Download ${attachment.filename}`}
                   >

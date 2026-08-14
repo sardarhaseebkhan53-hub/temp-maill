@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { Navbar } from "@/components/layout/navbar";
-import { MobileNav } from "@/components/layout/mobile-nav";
+import { MobileNav, MobileNavSpacer } from "@/components/layout/mobile-nav";
 import { LOCALES, type Locale } from "@/types";
 
 const links: [string, string][] = [
@@ -56,6 +56,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <div className="min-w-0">{children}</div>
       </div>
 
+      <MobileNavSpacer />
       <MobileNav />
     </div>
   );

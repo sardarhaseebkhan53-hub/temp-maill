@@ -37,7 +37,7 @@ export function ContactForm() {
         name="message"
         required
         minLength={10}
-        className="w-full min-h-32 rounded-lg border bg-card p-3 text-sm"
+        className="w-full min-h-32 min-w-0 rounded-lg border bg-card p-3 text-base sm:text-sm"
         placeholder="How can we help?"
       />
       <Button type="submit" loading={busy}>

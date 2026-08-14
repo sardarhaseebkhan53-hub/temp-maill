@@ -136,7 +136,7 @@ export function MailboxCard({
         <button
           type="button"
           onClick={() => copy(mailbox.address)}
-          className="min-w-0 flex-1 truncate text-left font-mono text-sm font-semibold tracking-tight text-white xs:text-base sm:text-xl"
+          className="min-w-0 flex-1 break-all text-left font-mono text-sm font-semibold leading-snug tracking-tight text-white xs:text-base sm:truncate sm:text-xl"
           title="Copy email address"
         >
           {mailbox.address}
@@ -145,7 +145,7 @@ export function MailboxCard({
         <button
           type="button"
           onClick={() => copy(mailbox.address)}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0] sm:px-3"
+          className="inline-flex min-h-10 shrink-0 items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0] sm:px-3"
           aria-label="Copy email address"
         >
           {copied ? <Check className="size-4 text-[#00f5a0]" /> : <Copy className="size-4" />}
@@ -161,7 +161,7 @@ export function MailboxCard({
         <button
           type="button"
           onClick={() => copy(mailbox.address)}
-          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95 motion-reduce:active:scale-100"
         >
           {copied ? <Check className="size-3.5 text-[#00f5a0]" /> : <Copy className="size-3.5" />}
           <span>{copied ? "Copied!" : "Copy"}</span>
@@ -169,7 +169,7 @@ export function MailboxCard({
         <button
           type="button"
           onClick={loadQr}
-          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95 motion-reduce:active:scale-100"
         >
           <QrCode className="size-3.5 text-slate-300" />
           <span>QR code</span>
@@ -177,7 +177,7 @@ export function MailboxCard({
         <button
           type="button"
           onClick={share}
-          className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2.5 text-xs font-semibold text-white transition-all hover:bg-white/[0.12] active:scale-95 motion-reduce:active:scale-100"
         >
           <Share2 className="size-3.5 text-slate-300" />
           <span>Share</span>
@@ -186,7 +186,7 @@ export function MailboxCard({
           type="button"
           disabled={busy === "refresh"}
           onClick={() => run("refresh", onRefresh)}
-          className="flex items-center justify-center gap-1.5 rounded-xl border border-[#00f5a0]/30 bg-[#00f5a0]/15 px-3 py-2.5 text-xs font-bold text-[#00f5a0] shadow-[0_0_15px_rgba(0,245,160,0.15)] transition-all hover:bg-[#00f5a0]/25 active:scale-95 disabled:cursor-wait disabled:opacity-60"
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[#00f5a0]/30 bg-[#00f5a0]/15 px-3 py-2.5 text-xs font-bold text-[#00f5a0] shadow-[0_0_15px_rgba(0,245,160,0.15)] transition-all hover:bg-[#00f5a0]/25 active:scale-95 motion-reduce:active:scale-100 disabled:cursor-wait disabled:opacity-60"
         >
           {busy === "refresh" ? <RefreshCw className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />}
           <span>New address</span>
@@ -218,7 +218,7 @@ export function MailboxCard({
           type="button"
           disabled={busy === "extend"}
           onClick={() => run("extend", onExtend)}
-          className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-slate-200 transition-all hover:bg-white/[0.08] active:scale-95 disabled:cursor-wait disabled:opacity-60"
+          className="flex min-h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold text-slate-200 transition-all hover:bg-white/[0.08] active:scale-95 motion-reduce:active:scale-100 disabled:cursor-wait disabled:opacity-60"
         >
           <Clock className="size-3.5 text-[#00f5a0]" />
           <span>{busy === "extend" ? "Extending…" : "Extend"}</span>
@@ -227,7 +227,7 @@ export function MailboxCard({
           type="button"
           disabled={busy === "delete"}
           onClick={() => run("delete", onDelete)}
-          className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 active:scale-95 disabled:cursor-wait disabled:opacity-60"
+          className="flex min-h-11 items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-400 transition-all hover:bg-red-500/20 active:scale-95 motion-reduce:active:scale-100 disabled:cursor-wait disabled:opacity-60"
         >
           <Trash2 className="size-3.5" />
           <span>{busy === "delete" ? "Deleting…" : "Delete"}</span>

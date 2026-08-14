@@ -121,6 +121,14 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "menu-down": {
+          from: { opacity: "0", transform: "translateY(-10px) scale(0.99)" },
+          to: { opacity: "1", transform: "translateY(0) scale(1)" },
+        },
+        "reader-in": {
+          from: { opacity: "0", transform: "translateX(14px)" },
+          to: { opacity: "1", transform: "translateX(0)" },
+        },
         "pulse-soft": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.65" },
@@ -140,6 +148,8 @@ const config: Config = {
         shimmer: "shimmer 1.6s linear infinite",
         "fade-in": "fade-in 0.22s cubic-bezier(0.22, 1, 0.36, 1)",
         "slide-up": "slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1)",
+        "menu-down": "menu-down 0.2s cubic-bezier(0.22, 1, 0.36, 1)",
+        "reader-in": "reader-in 0.24s cubic-bezier(0.22, 1, 0.36, 1)",
         "pulse-soft": "pulse-soft 1.4s ease-in-out infinite",
         float: "float 4s ease-in-out infinite",
         "float-slow": "float-slow 6s ease-in-out infinite",

@@ -75,7 +75,7 @@ export function InboxList({
                 type="button"
                 onClick={() => onFilterChange?.(filter)}
                 className={cn(
-                  "rounded-lg px-2.5 py-1.5 font-medium capitalize transition-colors",
+                  "min-h-10 rounded-lg px-2.5 py-1.5 font-medium capitalize transition-colors sm:min-h-0",
                   activeFilter === filter
                     ? "bg-white/[0.12] font-semibold text-white shadow-sm"
                     : "text-slate-400 hover:text-white",

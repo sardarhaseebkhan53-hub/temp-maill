@@ -155,7 +155,7 @@ export function ManualPayForm({
             minLength={4}
             maxLength={80}
             placeholder="e.g. TID 4829301882"
-            className="w-full min-w-0 rounded-xl border border-white/10 bg-[#070a10] px-3.5 py-3 text-sm text-white placeholder:text-slate-600 focus:border-[#00f5a0]/60 focus:outline-none"
+            className="w-full min-w-0 rounded-xl border border-white/10 bg-[#070a10] px-3.5 py-3 text-base sm:text-sm text-white placeholder:text-slate-600 focus:border-[#00f5a0]/60 focus:outline-none"
           />
         </div>
 
@@ -168,7 +168,7 @@ export function ManualPayForm({
             name="screenshotUrl"
             type="url"
             placeholder="https://…"
-            className="w-full min-w-0 rounded-xl border border-white/10 bg-[#070a10] px-3.5 py-3 text-sm text-white placeholder:text-slate-600 focus:border-[#00f5a0]/60 focus:outline-none"
+            className="w-full min-w-0 rounded-xl border border-white/10 bg-[#070a10] px-3.5 py-3 text-base sm:text-sm text-white placeholder:text-slate-600 focus:border-[#00f5a0]/60 focus:outline-none"
           />
         </div>
 

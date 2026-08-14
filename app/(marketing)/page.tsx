@@ -153,10 +153,6 @@ export default async function HomePage() {
           </aside>
         </section>
 
-        <div className="xl:hidden">
-          <AdSlot slot="MOBILE" resolved={ads.MOBILE} />
-        </div>
-
         {/* ── How it works ─────────────────────────────────────────────── */}
         <Reveal asChild>
           <section
@@ -418,6 +414,13 @@ export default async function HomePage() {
             </section>
           </Reveal>
         ) : null}
+
+        {/* Mobile/tablet banner: a single, clearly separated placement at the
+            bottom of the page — never between the address and its actions,
+            and never inside the inbox. Desktop uses the rail/rectangle slots. */}
+        <div className="xl:hidden">
+          <AdSlot slot="MOBILE" resolved={ads.MOBILE} />
+        </div>
       </main>
     </div>
   );

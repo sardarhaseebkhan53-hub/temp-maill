@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { MobileNav } from "@/components/layout/mobile-nav";
+import { MobileNav, MobileNavSpacer } from "@/components/layout/mobile-nav";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { LOCALES, type Locale } from "@/types";
@@ -27,6 +27,7 @@ export default async function MarketingLayout({ children }: { children: React.Re
       <Navbar user={ctx?.user ?? null} locale={locale} />
       <main className="min-w-0 flex-1">{children}</main>
       <Footer />
+      <MobileNavSpacer />
       <MobileNav />
     </div>
   );
