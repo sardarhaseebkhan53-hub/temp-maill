@@ -4,35 +4,57 @@ import { Providers } from "@/components/providers";
 import { isRtl } from "@/i18n";
 import type { Locale } from "@/types";
 import { LOCALES } from "@/types";
+import { getEnv } from "@/config/env";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.APP_URL || "http://localhost:3000"),
   title: {
-    default: "Haven — Temporary Email & Privacy Tools",
-    template: "%s · Haven",
+    default: "Temporary Email — Free Disposable Inbox | Haven",
+    template: "%s | Haven",
   },
   description:
-    "Create a disposable email address in seconds. No signup. Messages are sanitized before you see them and auto-delete.",
+    "Create a free temporary email address instantly. Receive email in a private disposable inbox with automatic expiry, real-time delivery and no signup required.",
   applicationName: "Haven",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/favicon.ico" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/icons/icon-192.png" }],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Haven" }],
+    type: "website",
+    siteName: "Haven",
+    locale: "en_US",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Haven — free temporary email and disposable inbox",
+      },
+    ],
   },
+  twitter: { card: "summary_large_image", site: "@havenmail" },
+  // Only emitted when an operator has configured a token.
+  verification: {
+    ...(getEnv().GOOGLE_SITE_VERIFICATION
+      ? { google: getEnv().GOOGLE_SITE_VERIFICATION }
+      : {}),
+    ...(getEnv().BING_SITE_VERIFICATION
+      ? { other: { "msvalidate.01": getEnv().BING_SITE_VERIFICATION } }
+      : {}),
+  },
+  formatDetection: { telephone: false, address: false, email: false },
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4fbf9" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1514" },
-  ],
+  // The application shell is dark in both schemes, so the browser chrome
+  // should match rather than flashing a light bar.
+  themeColor: "#06080d",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",

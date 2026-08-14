@@ -2,8 +2,9 @@ import { SeoLanding } from "@/components/features/seo-landing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Disposable Email Address Generator",
-  description: "Disposable email for one-off signups. Sanitized HTML, attachment allowlists, and automatic deletion.",
+  title: "Disposable Email Address — Free Throwaway Inbox",
+  description:
+    "A free disposable email address for one-off signups. Mail is sanitized, attachments are allowlisted, and the whole inbox deletes itself automatically.",
   path: "/disposable-email",
 });
 

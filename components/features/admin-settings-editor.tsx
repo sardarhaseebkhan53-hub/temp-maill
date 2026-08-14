@@ -20,7 +20,10 @@ export function SettingsEditor({ rows }: { rows: { key: string; value: string; g
   return (
     <form onSubmit={onSubmit} className="space-y-3 max-w-2xl">
       {rows.map((r) => (
-        <label key={r.key} className="grid sm:grid-cols-[1fr_1fr] gap-2 text-sm items-center">
+        <label
+          key={r.key}
+          className="grid min-w-0 items-center gap-2 text-sm sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"
+        >
           <span className="font-mono text-xs">
             {r.group}/{r.key}
           </span>

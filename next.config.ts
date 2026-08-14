@@ -52,6 +52,30 @@ const nextConfig: NextConfig = {
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Cache-Control", value: "no-store" },
+          // API responses can contain mailbox contents. robots.txt stops
+          // well-behaved crawlers; this stops anything that reaches them anyway
+          // from indexing the response.
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
+      {
+        // Session-specific surfaces. Sent as a header as well as a meta tag so
+        // the directive survives non-HTML responses and redirects.
+        source: "/:path(inbox|login|register|forgot-password)",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/dashboard/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store" },
+        ],
+      },
+      {
+        source: "/admin/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+          { key: "Cache-Control", value: "no-store" },
         ],
       },
     ];

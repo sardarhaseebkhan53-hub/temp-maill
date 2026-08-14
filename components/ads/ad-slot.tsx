@@ -1,111 +1,92 @@
-"use client";
-
 import { cn } from "@/lib/utils";
+import { resolveAdSlot, type AdSlotKey, type ResolvedAdSlot } from "@/server/services/ads";
+import { AdUnit } from "@/components/ads/ad-unit";
 
-export type AdPlacement = "top-leaderboard" | "hero-rectangle" | "sidebar" | "mobile-banner";
+export type { AdSlotKey };
 
 interface AdSlotProps {
-  placement: AdPlacement;
+  slot: AdSlotKey;
   className?: string;
-  isPremium?: boolean;
-  testMode?: boolean;
-  slotId?: string;
+  /** Pass a pre-resolved slot to avoid re-resolving on pages with many slots. */
+  resolved?: ResolvedAdSlot;
 }
 
-function TestLabel() {
+/**
+ * The single advertising primitive used across Haven.
+ *
+ * Every slot is explicitly labelled "Advertisement", is visually distinct from
+ * app controls, never overlaps interactive UI, and reserves its own height so
+ * loading an ad cannot shift the page. Premium viewers get nothing at all.
+ */
+export async function AdSlot({ slot, className, resolved }: AdSlotProps) {
+  const config = resolved ?? (await resolveAdSlot(slot));
+  if (!config.render) return null;
+
+  const { format } = config;
+
   return (
-    <span className="whitespace-nowrap rounded-full border border-purple-500/40 bg-purple-500/20 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-purple-300">
-      Test Ad
-    </span>
+    <aside
+      aria-label="Advertisement"
+      data-ad-slot={slot}
+      className={cn(
+        "not-prose relative isolate mx-auto flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-purple-500/25 bg-[#0b0e18]/90",
+        className,
+      )}
+      style={{ maxWidth: format.responsive ? format.width : `${format.width}px` }}
+    >
+      <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-2.5 py-1.5">
+        <span className="rounded-full border border-purple-500/40 bg-purple-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-purple-300">
+          {config.mode === "test" ? "Test ad" : "Advertisement"}
+        </span>
+        <span className="truncate text-[9px] font-medium uppercase tracking-wider text-slate-500">
+          Sponsored
+        </span>
+      </div>
+
+      <div
+        className="flex min-w-0 items-center justify-center p-2"
+        style={{ minHeight: `${Math.min(format.height, 250)}px` }}
+      >
+        {config.mode === "live" ? (
+          <AdUnit
+            network={config.network}
+            unitId={config.unitId}
+            clientId={config.clientId}
+            responsive={format.responsive}
+            width={format.width}
+            height={format.height}
+          />
+        ) : (
+          <Placeholder
+            label={format.label}
+            width={format.width}
+            height={format.height}
+            responsive={format.responsive}
+          />
+        )}
+      </div>
+    </aside>
   );
 }
 
-function ProviderLabel() {
-  return <span className="text-[9px] font-medium text-slate-500">Ad placement preview</span>;
-}
-
-export function AdSlot({
-  placement,
-  className,
-  isPremium = false,
-  testMode = true,
-  slotId: _slotId,
-}: AdSlotProps) {
-  if (isPremium || !testMode) return null;
-
-  if (placement === "top-leaderboard") {
-    return (
-      <div
-        className={cn(
-          "mx-auto grid min-h-16 w-full max-w-[728px] min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl border border-indigo-500/25 bg-[#0b0e18]/90 px-3 py-2 shadow-[0_0_24px_rgba(99,102,241,0.1)] sm:h-[72px] sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:rounded-2xl sm:px-5",
-          className,
-        )}
-      >
-        <TestLabel />
-        <div className="min-w-0 text-center">
-          <div className="font-display text-base font-bold tracking-tight text-white sm:text-xl">
-            <span className="sm:hidden">320 × 50</span>
-            <span className="hidden sm:inline">728 × 90</span>
-          </div>
-          <div className="truncate text-[10px] font-medium text-slate-400 sm:text-[11px]">Responsive leaderboard</div>
-        </div>
-        <div className="hidden text-right sm:block">
-          <ProviderLabel />
-        </div>
-      </div>
-    );
-  }
-
-  if (placement === "hero-rectangle") {
-    return (
-      <div
-        className={cn(
-          "flex aspect-[6/5] min-h-56 w-full max-w-[300px] min-w-0 flex-col items-center justify-between rounded-2xl border border-purple-500/30 bg-[#0b0e18]/95 p-4 text-center shadow-[0_0_28px_rgba(139,92,246,0.14)]",
-          className,
-        )}
-      >
-        <div className="flex w-full justify-start">
-          <TestLabel />
-        </div>
-        <div>
-          <div className="font-display text-2xl font-bold tracking-tight text-white">300 × 250</div>
-          <div className="mt-1 text-xs font-medium text-slate-300">Medium rectangle</div>
-        </div>
-        <ProviderLabel />
-      </div>
-    );
-  }
-
-  if (placement === "sidebar") {
-    return (
-      <div
-        className={cn(
-          "flex min-h-[360px] w-full max-w-[160px] min-w-0 flex-col items-center justify-between rounded-2xl border border-purple-500/30 bg-[#0b0e18]/90 p-4 text-center shadow-[0_0_24px_rgba(139,92,246,0.1)]",
-          className,
-        )}
-      >
-        <TestLabel />
-        <div>
-          <div className="font-display text-xl font-bold tracking-tight text-white">160 × 600</div>
-          <div className="mt-1 text-[11px] font-medium text-slate-300">Responsive skyscraper</div>
-        </div>
-        <ProviderLabel />
-      </div>
-    );
-  }
-
+function Placeholder({
+  label,
+  width,
+  height,
+  responsive,
+}: {
+  label: string;
+  width: number;
+  height: number;
+  responsive: boolean;
+}) {
   return (
-    <div
-      className={cn(
-        "grid min-h-[72px] w-full max-w-[320px] min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl border border-purple-500/30 bg-[#0b0e18]/90 px-3 py-2 text-center shadow-[0_0_20px_rgba(139,92,246,0.1)]",
-        className,
-      )}
-    >
-      <TestLabel />
-      <div className="min-w-0">
-        <div className="font-display text-base font-bold tracking-tight text-white">320 × 50</div>
-        <div className="truncate text-[10px] font-medium text-slate-400">Mobile banner</div>
-      </div>
+    <div className="flex w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-purple-500/20 bg-purple-500/[0.04] px-3 py-4 text-center">
+      <span className="font-display text-base font-bold tracking-tight text-slate-200">
+        {responsive ? "Responsive" : `${width} × ${height}`}
+      </span>
+      <span className="text-[10px] font-medium text-slate-500">{label}</span>
+      <span className="text-[9px] text-slate-600">Placeholder shown while ads are in test mode</span>
     </div>
   );
 }

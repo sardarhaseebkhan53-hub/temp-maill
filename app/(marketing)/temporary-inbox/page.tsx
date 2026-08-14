@@ -2,8 +2,9 @@ import { SeoLanding } from "@/components/features/seo-landing";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  title: "Temporary Inbox — Read Mail Safely",
-  description: "A temporary inbox with search, filters, sandboxed rendering, and a report-abuse path.",
+  title: "Temporary Inbox Online — Read Mail Safely",
+  description:
+    "A temporary inbox you can read safely online. Filters, sandboxed message rendering, attachment checks, and a clear path to report abusive mail.",
   path: "/temporary-inbox",
 });
 

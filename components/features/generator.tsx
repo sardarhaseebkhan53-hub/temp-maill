@@ -228,6 +228,7 @@ export function InboxGenerator({
       {mailbox ? (
         <MailboxCard
           mailbox={mailbox}
+          live={connected}
           onRefresh={async () => {
             const next = await createBox({ domainId: selectedDomainId });
             if (next) toast.success("New temporary address ready");

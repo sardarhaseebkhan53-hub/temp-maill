@@ -436,6 +436,34 @@ CREATE TABLE IF NOT EXISTS ManualPayment (
 );
 CREATE INDEX IF NOT EXISTS ManualPayment_adminStatus_createdAt_idx ON ManualPayment(adminStatus, createdAt);
 
+-- Operator-configurable payment methods. Credentials/instructions live in the
+-- database so nothing has to be hardcoded in source.
+CREATE TABLE IF NOT EXISTS PaymentMethod (
+  id TEXT PRIMARY KEY,
+  key TEXT NOT NULL UNIQUE,
+  kind TEXT NOT NULL DEFAULT 'MANUAL',
+  name TEXT NOT NULL,
+  displayName TEXT NOT NULL,
+  description TEXT NOT NULL DEFAULT '',
+  instructions TEXT NOT NULL DEFAULT '',
+  accountNumber TEXT,
+  accountTitle TEXT,
+  merchantId TEXT,
+  iban TEXT,
+  bankName TEXT,
+  qrImageUrl TEXT,
+  currency TEXT NOT NULL DEFAULT 'USD',
+  minAmountCents INTEGER,
+  maxAmountCents INTEGER,
+  planKeysJson TEXT NOT NULL DEFAULT '[]',
+  sortOrder INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  enabled INTEGER NOT NULL DEFAULT 0,
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS PaymentMethod_enabled_sortOrder_idx ON PaymentMethod(enabled, sortOrder);
+
 CREATE TABLE IF NOT EXISTS Coupon (
   id TEXT PRIMARY KEY,
   code TEXT NOT NULL UNIQUE,

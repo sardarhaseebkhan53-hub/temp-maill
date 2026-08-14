@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       currency: body.currency,
       method: body.method,
       transactionId: body.transactionId,
-      amountCents: body.amountCents,
+      screenshotKey: body.screenshotUrl,
     });
     return ok({ id: payment.id, status: payment.status }, { status: 201 });
   } catch (e) {

@@ -47,6 +47,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1).max(128),
+  remember: z.boolean().optional().default(true),
 });
 
 export const webhookCreateSchema = z.object({
@@ -81,9 +82,18 @@ export const manualPaymentSchema = z.object({
   planKey: z.enum(["PRO", "DEVELOPER", "BUSINESS"]),
   interval: z.enum(["month", "year", "lifetime"]),
   currency: z.string().min(3).max(3),
-  method: z.enum(["bank_transfer", "jazzcash", "easypaisa", "other"]),
-  transactionId: z.string().min(4).max(80),
-  amountCents: z.number().int().positive(),
+  // Any method key the operator configured; existence and eligibility are
+  // verified server-side against the PaymentMethod table.
+  method: z
+    .string()
+    .trim()
+    .min(2)
+    .max(40)
+    .regex(/^[a-z0-9_]+$/),
+  transactionId: z.string().trim().min(4).max(80),
+  /** What the customer says they sent; the charge uses the plan price. */
+  amountCents: z.number().int().positive().optional(),
+  screenshotUrl: z.string().url().max(500).optional(),
 });
 
 export const aliasCreateSchema = z.object({

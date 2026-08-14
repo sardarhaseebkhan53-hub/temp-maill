@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { buildMetadata } from "@/lib/seo";
-
-const LEGAL = new Set(["privacy", "terms", "cookies", "acceptable-use", "abuse", "security"]);
+import { PageShell } from "@/components/layout/page-shell";
+import { stripLeadingH1, summarizeHtml } from "@/lib/content";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -10,27 +10,37 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!page) return {};
   return buildMetadata({
     title: page.seoTitle || page.title,
-    description: page.seoDescription || page.title,
+    // Fall back to an excerpt of the page's own text rather than echoing the
+    // title, which produces a uselessly short description.
+    description: page.seoDescription || summarizeHtml(page.contentHtml, page.title),
     path: `/${slug}`,
   });
 }
 
 export default async function CmsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  if (!LEGAL.has(slug)) {
-    const page = await prisma.page.findUnique({ where: { slug } });
-    if (!page || !page.published) notFound();
-    return (
-      <div className="container py-12 max-w-3xl">
-        <div className="prose" dangerouslySetInnerHTML={{ __html: page.contentHtml }} />
-      </div>
-    );
-  }
   const page = await prisma.page.findUnique({ where: { slug } });
-  if (!page) notFound();
+  if (!page || !page.published) notFound();
+
   return (
-    <div className="container py-12 max-w-3xl">
-      <div className="prose" dangerouslySetInnerHTML={{ __html: page.contentHtml }} />
-    </div>
+    <PageShell
+      title={page.title}
+      description={
+        page.updatedAt
+          ? `Last updated ${new Date(page.updatedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}`
+          : undefined
+      }
+      path={`/${slug}`}
+      crumbs={[
+        { name: "Home", path: "/" },
+        { name: page.title, path: `/${slug}` },
+      ]}
+    >
+      <article
+        className="prose-haven min-w-0"
+        // The shell renders the title as the page's single H1.
+        dangerouslySetInnerHTML={{ __html: stripLeadingH1(page.contentHtml) }}
+      />
+    </PageShell>
   );
 }

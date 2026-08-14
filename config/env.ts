@@ -57,6 +57,10 @@ const schema = z.object({
   GITHUB_CLIENT_ID: z.string().optional().default(""),
   GITHUB_CLIENT_SECRET: z.string().optional().default(""),
   CRON_SECRET: z.string().default("local-dev-cron-secret"),
+  // Search engine ownership verification. Supplied per deployment; never
+  // hardcode a verification token in source.
+  GOOGLE_SITE_VERIFICATION: z.string().optional().default(""),
+  BING_SITE_VERIFICATION: z.string().optional().default(""),
 });
 
 export type AppEnv = z.infer<typeof schema>;

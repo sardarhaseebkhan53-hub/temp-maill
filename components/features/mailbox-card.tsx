@@ -14,6 +14,8 @@ interface MailboxCardProps {
   onRefresh: () => Promise<void>;
   onDelete: () => Promise<void>;
   onExtend: () => Promise<void>;
+  /** True while the SSE stream is attached; falls back to polling otherwise. */
+  live?: boolean;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export function MailboxCard({
   onRefresh,
   onDelete,
   onExtend,
+  live = false,
   className,
 }: MailboxCardProps) {
   const { copied, copy } = useClipboard();
@@ -99,11 +102,27 @@ export function MailboxCard({
     >
       <div className="pointer-events-none absolute -right-24 -top-24 size-48 rounded-full bg-[#00f5a0]/10 blur-3xl" />
 
-      <div className="relative mb-3.5 flex flex-col items-start gap-2 xs:flex-row xs:items-center xs:justify-between">
-        <div className="flex items-center gap-2">
-          <span className="size-2 rounded-full bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.9)]" />
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-300 sm:text-xs">
+      <div className="relative mb-3.5 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="size-2 shrink-0 rounded-full bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.9)]" />
+          <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-slate-300 sm:text-xs">
             Your temporary email
+          </span>
+          <span
+            className={cn(
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-bold",
+              live
+                ? "border-[#00f5a0]/30 bg-[#00f5a0]/10 text-[#00f5a0]"
+                : "border-amber-500/30 bg-amber-500/10 text-amber-300",
+            )}
+          >
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                live ? "animate-pulse bg-[#00f5a0] motion-reduce:animate-none" : "bg-amber-400",
+              )}
+            />
+            {live ? "Live" : "Polling"}
           </span>
         </div>
 

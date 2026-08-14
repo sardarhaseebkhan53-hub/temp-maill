@@ -570,6 +570,36 @@ model ManualPayment {
   @@index([adminStatus, createdAt])
 }
 
+/// Operator-configurable payment methods (Stripe, JazzCash, Easypaisa, bank
+/// transfer, or any other manual rail). Never store secret API keys here —
+/// those stay in environment variables.
+model PaymentMethod {
+  id             String   @id @default(cuid())
+  key            String   @unique
+  kind           String   @default("MANUAL") // MANUAL | STRIPE
+  name           String
+  displayName    String
+  description    String   @default("")
+  instructions   String   @default("")
+  accountNumber  String?
+  accountTitle   String?
+  merchantId     String?
+  iban           String?
+  bankName       String?
+  qrImageUrl     String?
+  currency       String   @default("USD")
+  minAmountCents Int?
+  maxAmountCents Int?
+  planKeysJson   String   @default("[]")
+  sortOrder      Int      @default(0)
+  status         String   @default("ACTIVE")
+  enabled        Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([enabled, sortOrder])
+}
+
 model Coupon {
   id            String             @id @default(cuid())
   code          String             @unique

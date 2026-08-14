@@ -3,6 +3,7 @@ import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/db";
 import { purgeLegacyInjectedMessages } from "../../server/services/legacy-data-cleanup";
+import { blogCategories, blogPosts } from "./blog-content";
 
 async function hashPassword(password: string) {
   const salt = randomBytes(16);
@@ -88,11 +89,11 @@ async function main() {
 
   const services = [
     { key: "temp_email", name: "Temporary Email", description: "Disposable inboxes that expire automatically.", href: "/inbox", icon: "inbox", sortOrder: 1 },
-    { key: "temp_sms", name: "Temporary Phone", description: "Receive SMS for testing and personal privacy.", href: "/sms", icon: "smartphone", sortOrder: 2 },
+    { key: "temp_sms", name: "Temporary Phone", description: "Receive SMS for testing and personal privacy.", href: "/temporary-phone", icon: "smartphone", sortOrder: 2 },
     { key: "file_drop", name: "File Drop", description: "Auto-expiring encrypted file sharing.", href: "/tools", icon: "file", sortOrder: 3, enabled: false },
     { key: "burner_link", name: "Burner Links", description: "Self-destructing notes and links.", href: "/tools", icon: "link", sortOrder: 4, enabled: false },
     { key: "temp_chat", name: "Temporary Chat", description: "Ephemeral rooms with no long-term logs.", href: "/tools", icon: "message", sortOrder: 5, enabled: false },
-    { key: "smtp_sandbox", name: "SMTP Sandbox", description: "Capture mail for QA and developers.", href: "/developer-api", icon: "server", sortOrder: 6, enabled: true },
+    { key: "smtp_sandbox", name: "SMTP Sandbox", description: "Capture mail for QA and developers.", href: "/temporary-email-for-testing", icon: "server", sortOrder: 6, enabled: true },
     { key: "breach_check", name: "Breach Checker", description: "See if a username appears in known dumps.", href: "/tools/breach-checker", icon: "shield", sortOrder: 7 },
     { key: "fingerprint", name: "Tracker Check", description: "Inspect what your browser reveals.", href: "/tools/fingerprint", icon: "scan", sortOrder: 8 },
   ];
@@ -316,6 +317,10 @@ async function main() {
     ["i18n.default_locale", "en", "i18n", "string"],
     ["billing.default_currency", "USD", "billing", "string"],
     ["ads.enabled", "true", "ads", "bool"],
+    // Test mode ships on: real units only render once an operator adds a
+    // network client id and turns test mode off in the admin panel.
+    ["ads.test_mode", "true", "ads", "bool"],
+    ["ads.client_id", "", "ads", "string"],
     ["referral.reward_cents", "300", "billing", "number"],
     ["referral.max_rewards_per_user", "25", "billing", "number"],
     ["seo.default_title", "Haven — Temporary Email & Privacy Tools", "seo", "string"],
@@ -379,42 +384,48 @@ async function main() {
       title: "Privacy Policy",
       contentHtml: privacyHtml(),
       seoTitle: "Privacy Policy — Haven",
-      seoDescription: "How Haven collects, uses, and deletes data.",
+      seoDescription:
+        "What data Haven collects when you use a temporary inbox, how long messages and logs are kept, who they are shared with, and how to have your data deleted.",
     },
     {
       slug: "terms",
       title: "Terms of Service",
       contentHtml: termsHtml(),
       seoTitle: "Terms of Service — Haven",
-      seoDescription: "The rules for using Haven privacy services.",
+      seoDescription:
+        "The terms governing use of Haven temporary email and privacy services, including account rules, plan billing, service availability, and limitation of liability.",
     },
     {
       slug: "cookies",
       title: "Cookie Policy",
       contentHtml: cookiesHtml(),
       seoTitle: "Cookie Policy — Haven",
-      seoDescription: "Cookies and similar technologies used by Haven.",
+      seoDescription:
+        "The cookies and similar technologies Haven uses, including the guest mailbox cookie and session cookie, what each stores, and how long they persist.",
     },
     {
       slug: "acceptable-use",
       title: "Acceptable Use Policy",
       contentHtml: aupHtml(),
       seoTitle: "Acceptable Use — Haven",
-      seoDescription: "Prohibited uses of Haven services.",
+      seoDescription:
+        "What you may not do with Haven temporary email: bulk account creation, ban evasion, harassment, defeating third-party anti-fraud controls, and other prohibited uses.",
     },
     {
       slug: "abuse",
       title: "Abuse Policy",
       contentHtml: abuseHtml(),
       seoTitle: "Abuse Policy — Haven",
-      seoDescription: "How to report abuse and how we respond.",
+      seoDescription:
+        "How to report abusive mail, phishing, or misuse of a Haven address, what information helps us act, and how the moderation queue handles each report.",
     },
     {
       slug: "security",
       title: "Security",
       contentHtml: securityHtml(),
       seoTitle: "Security — Haven",
-      seoDescription: "How Haven protects inboxes and accounts.",
+      seoDescription:
+        "How Haven protects inboxes and accounts: HTML sanitization, sandboxed rendering, attachment allowlists, Argon2id password hashing, and responsible disclosure.",
     },
   ];
   for (const p of pages) {
@@ -425,22 +436,37 @@ async function main() {
     });
   }
 
-  if ((await prisma.blogCategory.count()) === 0) {
-    const cat = await prisma.blogCategory.create({
-      data: { slug: "privacy", name: "Privacy", description: "Practical privacy notes" },
-    });
+  // Editorial content: categories and long-form explainers. Existing posts are
+  // never overwritten, so operator edits survive re-seeding.
+  const categoryIds = new Map<string, string>();
+  for (const category of blogCategories) {
+    const existing = await prisma.blogCategory.findUnique({ where: { slug: category.slug } });
+    const row =
+      existing ??
+      (await prisma.blogCategory.create({
+        data: { slug: category.slug, name: category.name, description: category.description },
+      }));
+    categoryIds.set(category.slug, row.id);
+  }
+
+  let publishedOffset = 0;
+  for (const post of blogPosts) {
+    if (await prisma.blogPost.findUnique({ where: { slug: post.slug } })) continue;
+    // Stagger publication dates so the feed is not one identical timestamp.
+    publishedOffset += 1;
     await prisma.blogPost.create({
       data: {
-        slug: "why-disposable-inboxes-exist",
-        title: "Why disposable inboxes exist",
-        excerpt: "A short field guide to using temporary email without pretending it makes you invisible.",
-        contentHtml: blogPostHtml(),
-        contentMd: "Why disposable inboxes exist",
+        slug: post.slug,
+        title: post.title,
+        excerpt: post.excerpt,
+        contentHtml: post.html,
+        contentMd: post.excerpt,
         status: "PUBLISHED",
-        publishedAt: new Date(),
-        categoryId: cat.id,
-        seoTitle: "Why disposable inboxes exist — Haven",
-        seoDescription: "When a temporary inbox is the right tool, and when it is not.",
+        authorName: "Haven Editorial",
+        publishedAt: new Date(Date.now() - publishedOffset * 3 * 86400000),
+        categoryId: categoryIds.get(post.category),
+        seoTitle: post.seoTitle,
+        seoDescription: post.seoDescription,
       },
     });
   }
@@ -471,30 +497,96 @@ async function main() {
     update: { enabled: true, adapter: "generic" },
     create: { key: "internal", name: "Internal / house", adapter: "generic", enabled: true },
   });
-  await prisma.adPlacement.upsert({
-    where: { key: "home_sidebar" },
-    update: { enabled: true },
-    create: {
-      networkId: network.id,
-      key: "home_sidebar",
-      zone: "sidebar",
-      slotId: "house-home",
-      excludePremium: true,
-      enabled: true,
+  // Payment methods an operator can turn on and fill in from the admin panel.
+  // They ship disabled and empty: no credentials are ever hardcoded.
+  const paymentMethods: {
+    key: string;
+    kind: string;
+    name: string;
+    displayName: string;
+    description: string;
+    instructions: string;
+    currency: string;
+    sortOrder: number;
+  }[] = [
+    {
+      key: "stripe",
+      kind: "STRIPE",
+      name: "Stripe",
+      displayName: "Card payment",
+      description: "Pay by card. Premium activates automatically once Stripe confirms the payment.",
+      instructions: "",
+      currency: "USD",
+      sortOrder: 0,
     },
-  });
-  await prisma.adPlacement.upsert({
-    where: { key: "inbox_footer" },
-    update: { enabled: true },
-    create: {
-      networkId: network.id,
-      key: "inbox_footer",
-      zone: "footer",
-      slotId: "house-inbox",
-      excludePremium: true,
-      enabled: true,
+    {
+      key: "jazzcash",
+      kind: "MANUAL",
+      name: "JazzCash",
+      displayName: "JazzCash",
+      description: "Send the amount to the JazzCash account below, then submit your transaction ID.",
+      instructions: "Open JazzCash, send the exact amount, and paste the TID from your receipt.",
+      currency: "PKR",
+      sortOrder: 1,
     },
-  });
+    {
+      key: "easypaisa",
+      kind: "MANUAL",
+      name: "Easypaisa",
+      displayName: "Easypaisa",
+      description: "Send the amount to the Easypaisa account below, then submit your transaction ID.",
+      instructions: "Open Easypaisa, send the exact amount, and paste the TID from your receipt.",
+      currency: "PKR",
+      sortOrder: 2,
+    },
+    {
+      key: "bank_transfer",
+      kind: "MANUAL",
+      name: "Bank transfer",
+      displayName: "Bank transfer",
+      description: "Transfer to the bank account below, then submit your reference number.",
+      instructions: "Use your account email as the transfer reference where possible.",
+      currency: "PKR",
+      sortOrder: 3,
+    },
+  ];
+  for (const method of paymentMethods) {
+    const existing = await prisma.paymentMethod.findUnique({ where: { key: method.key } });
+    if (!existing) {
+      await prisma.paymentMethod.create({
+        data: { ...method, enabled: false, status: "ACTIVE", planKeysJson: "[]" },
+      });
+    }
+  }
+
+  // One placement row per canonical slot so every slot is administrable from
+  // day one. Enabled by default, but test mode keeps them as placeholders.
+  const canonicalSlots: [string, string][] = [
+    ["top_leaderboard", "header"],
+    ["hero", "hero"],
+    ["content", "content"],
+    ["rectangle", "content"],
+    ["right_rail", "rail"],
+    ["left_rail", "rail"],
+    ["mobile", "mobile"],
+    ["blog", "blog"],
+    ["tools", "tools"],
+    ["footer", "footer"],
+  ];
+  for (const [slot, zone] of canonicalSlots) {
+    await prisma.adPlacement.upsert({
+      where: { key: `slot_${slot}` },
+      update: { zone },
+      create: {
+        networkId: network.id,
+        key: `slot_${slot}`,
+        zone,
+        slotId: null,
+        excludePremium: true,
+        enabled: true,
+      },
+    });
+  }
 
   if ((await prisma.announcement.count()) === 0) {
     await prisma.announcement.create({
@@ -592,13 +684,6 @@ function securityHtml() {
     `<p>Inbound HTML is sanitized and rendered in a sandboxed frame. Attachments are allowlisted and optionally scanned. Sessions are httpOnly cookies. API keys are hashed. Payments are never trusted from the browser.</p>
 <p>Report vulnerabilities via the contact form with the topic “Security”.</p>`,
   );
-}
-
-function blogPostHtml() {
-  return `<article class="prose"><h1>Why disposable inboxes exist</h1>
-<p>Most of the internet still treats an email address as a permanent identity. That is convenient for the sender and expensive for you: newsletters you never wanted, credential stuffing against a mailbox you still need, and a paper trail that outlives the reason you signed up.</p>
-<p>A temporary inbox is a narrow tool. It is useful when you need a receipt, a confirmation link, or a one-off verification on a site you do not trust with your long-term address. It is a poor tool for banking, government identity, or anything you must prove later.</p>
-<p>Haven is built around that distinction. Addresses appear instantly, messages are sanitized before they reach the browser, and everything expires on a published schedule. We do not market this as anonymity. We market it as a shorter memory.</p></article>`;
 }
 
 main()
