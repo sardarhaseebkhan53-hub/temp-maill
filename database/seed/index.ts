@@ -89,11 +89,11 @@ async function main() {
 
   const services = [
     { key: "temp_email", name: "Temporary Email", description: "Disposable inboxes that expire automatically.", href: "/inbox", icon: "inbox", sortOrder: 1 },
-    { key: "temp_sms", name: "Temporary Phone", description: "Receive SMS for testing and personal privacy.", href: "/sms", icon: "smartphone", sortOrder: 2 },
+    { key: "temp_sms", name: "Temporary Phone", description: "Receive SMS for testing and personal privacy.", href: "/temporary-phone", icon: "smartphone", sortOrder: 2 },
     { key: "file_drop", name: "File Drop", description: "Auto-expiring encrypted file sharing.", href: "/tools", icon: "file", sortOrder: 3, enabled: false },
     { key: "burner_link", name: "Burner Links", description: "Self-destructing notes and links.", href: "/tools", icon: "link", sortOrder: 4, enabled: false },
     { key: "temp_chat", name: "Temporary Chat", description: "Ephemeral rooms with no long-term logs.", href: "/tools", icon: "message", sortOrder: 5, enabled: false },
-    { key: "smtp_sandbox", name: "SMTP Sandbox", description: "Capture mail for QA and developers.", href: "/developer-api", icon: "server", sortOrder: 6, enabled: true },
+    { key: "smtp_sandbox", name: "SMTP Sandbox", description: "Capture mail for QA and developers.", href: "/temporary-email-for-testing", icon: "server", sortOrder: 6, enabled: true },
     { key: "breach_check", name: "Breach Checker", description: "See if a username appears in known dumps.", href: "/tools/breach-checker", icon: "shield", sortOrder: 7 },
     { key: "fingerprint", name: "Tracker Check", description: "Inspect what your browser reveals.", href: "/tools/fingerprint", icon: "scan", sortOrder: 8 },
   ];
@@ -384,42 +384,48 @@ async function main() {
       title: "Privacy Policy",
       contentHtml: privacyHtml(),
       seoTitle: "Privacy Policy — Haven",
-      seoDescription: "How Haven collects, uses, and deletes data.",
+      seoDescription:
+        "What data Haven collects when you use a temporary inbox, how long messages and logs are kept, who they are shared with, and how to have your data deleted.",
     },
     {
       slug: "terms",
       title: "Terms of Service",
       contentHtml: termsHtml(),
       seoTitle: "Terms of Service — Haven",
-      seoDescription: "The rules for using Haven privacy services.",
+      seoDescription:
+        "The terms governing use of Haven temporary email and privacy services, including account rules, plan billing, service availability, and limitation of liability.",
     },
     {
       slug: "cookies",
       title: "Cookie Policy",
       contentHtml: cookiesHtml(),
       seoTitle: "Cookie Policy — Haven",
-      seoDescription: "Cookies and similar technologies used by Haven.",
+      seoDescription:
+        "The cookies and similar technologies Haven uses, including the guest mailbox cookie and session cookie, what each stores, and how long they persist.",
     },
     {
       slug: "acceptable-use",
       title: "Acceptable Use Policy",
       contentHtml: aupHtml(),
       seoTitle: "Acceptable Use — Haven",
-      seoDescription: "Prohibited uses of Haven services.",
+      seoDescription:
+        "What you may not do with Haven temporary email: bulk account creation, ban evasion, harassment, defeating third-party anti-fraud controls, and other prohibited uses.",
     },
     {
       slug: "abuse",
       title: "Abuse Policy",
       contentHtml: abuseHtml(),
       seoTitle: "Abuse Policy — Haven",
-      seoDescription: "How to report abuse and how we respond.",
+      seoDescription:
+        "How to report abusive mail, phishing, or misuse of a Haven address, what information helps us act, and how the moderation queue handles each report.",
     },
     {
       slug: "security",
       title: "Security",
       contentHtml: securityHtml(),
       seoTitle: "Security — Haven",
-      seoDescription: "How Haven protects inboxes and accounts.",
+      seoDescription:
+        "How Haven protects inboxes and accounts: HTML sanitization, sandboxed rendering, attachment allowlists, Argon2id password hashing, and responsible disclosure.",
     },
   ];
   for (const p of pages) {

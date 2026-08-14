@@ -1,4 +1,31 @@
 /**
+ * Build a meta description from stored HTML when no explicit SEO description
+ * exists. Echoing the title instead produces a uselessly short snippet.
+ *
+ * Trims on a word boundary so the description never ends mid-word.
+ */
+export function summarizeHtml(html: string, fallback: string, maxLength = 155): string {
+  const text = (html || "")
+    .replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (text.length < 40) return fallback;
+  if (text.length <= maxLength) return text;
+
+  const clipped = text.slice(0, maxLength);
+  const lastSpace = clipped.lastIndexOf(" ");
+  return `${(lastSpace > 60 ? clipped.slice(0, lastSpace) : clipped).replace(/[,;:.\s]+$/, "")}…`;
+}
+
+/**
  * Remove a leading `<h1>` from stored CMS/article HTML.
  *
  * The page shell already renders the title as the single document `<h1>`, so

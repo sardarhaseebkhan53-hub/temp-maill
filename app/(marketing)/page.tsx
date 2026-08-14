@@ -21,6 +21,7 @@ import {
 
 export const metadata = buildMetadata({
   title: "Temporary Email — Free Disposable Inbox | Haven",
+  absoluteTitle: true,
   description:
     "Create a free temporary email address instantly. Receive email in a private disposable inbox with automatic expiry, real-time delivery and no signup required.",
   path: "/",

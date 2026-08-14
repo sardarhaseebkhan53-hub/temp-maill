@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { buildMetadata } from "@/lib/seo";
 import { PageShell } from "@/components/layout/page-shell";
-import { stripLeadingH1 } from "@/lib/content";
+import { stripLeadingH1, summarizeHtml } from "@/lib/content";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -10,7 +10,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!page) return {};
   return buildMetadata({
     title: page.seoTitle || page.title,
-    description: page.seoDescription || page.title,
+    // Fall back to an excerpt of the page's own text rather than echoing the
+    // title, which produces a uselessly short description.
+    description: page.seoDescription || summarizeHtml(page.contentHtml, page.title),
     path: `/${slug}`,
   });
 }

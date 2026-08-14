@@ -25,6 +25,8 @@ function languageAlternates(url: string): Record<string, string> {
 
 export interface SeoOptions {
   title: string;
+  /** Bypass the root layout's "%s | Haven" template (used by the homepage). */
+  absoluteTitle?: boolean;
   description: string;
   path?: string;
   /** Suppress indexing for private or session-specific pages. */
@@ -47,7 +49,7 @@ export function buildMetadata(opts: SeoOptions): Metadata {
   const imageAlt = opts.imageAlt || `${opts.title} — ${SITE_NAME}`;
 
   return {
-    title: opts.title,
+    title: opts.absoluteTitle ? { absolute: opts.title } : opts.title,
     description: opts.description,
     alternates: {
       canonical: url,

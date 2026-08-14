@@ -10,7 +10,7 @@ import { resolveAdSlots } from "@/server/services/ads";
 export const metadata = buildMetadata({
   title: "Pricing — Ad-Free Temporary Email & Custom Domains",
   description:
-    "Haven pricing: a genuinely free disposable inbox, plus Pro, Developer, and Business plans adding an ad-free experience, custom domains, longer retention, and API access.",
+    "Haven pricing: a genuinely free disposable inbox, plus paid plans adding an ad-free experience, custom domains, longer retention, and developer API access.",
   path: "/pricing",
 });
 

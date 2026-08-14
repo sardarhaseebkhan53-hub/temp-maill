@@ -6,6 +6,7 @@ const columns: { title: string; links: [string, string][] }[] = [
     title: "Product",
     links: [
       ["/temporary-email", "Temporary email"],
+      ["/temporary-email-generator", "Email generator"],
       ["/temporary-inbox", "Temporary inbox"],
       ["/10-minute-mail", "10 minute mail"],
       ["/temporary-phone", "Temporary SMS"],
@@ -17,9 +18,10 @@ const columns: { title: string; links: [string, string][] }[] = [
     links: [
       ["/private-email", "Private email"],
       ["/disposable-email", "Disposable email"],
+      ["/burner-email", "Burner email"],
+      ["/free-temporary-email", "Free temporary email"],
+      ["/temporary-email-without-signup", "No signup required"],
       ["/privacy", "Privacy policy"],
-      ["/cookies", "Cookie policy"],
-      ["/security", "Security"],
     ],
   },
   {
@@ -29,6 +31,7 @@ const columns: { title: string; links: [string, string][] }[] = [
       ["/tools/breach-checker", "Breach checker"],
       ["/tools/fingerprint", "Browser fingerprint"],
       ["/temp-mail", "Temp mail"],
+      ["/sms-receiver", "Receive SMS online"],
     ],
   },
   {
@@ -39,6 +42,8 @@ const columns: { title: string; links: [string, string][] }[] = [
       ["/help", "Help & docs"],
       ["/developer-api", "Developer API"],
       ["/temporary-email-api", "Email API"],
+      ["/temporary-email-for-testing", "Email for testing"],
+      ["/temporary-email-for-verification", "Verification codes"],
     ],
   },
   {
@@ -54,8 +59,10 @@ const columns: { title: string; links: [string, string][] }[] = [
     links: [
       ["/terms", "Terms of service"],
       ["/privacy", "Privacy policy"],
+      ["/cookies", "Cookie policy"],
       ["/acceptable-use", "Acceptable use"],
       ["/abuse", "Abuse policy"],
+      ["/security", "Security"],
     ],
   },
 ];

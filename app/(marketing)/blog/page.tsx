@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays } from "lucide-react";
 import { prisma } from "@/lib/db";
-import { buildMetadata } from "@/lib/seo";
+import {
+  absoluteUrl,
+  breadcrumbSchema,
+  buildMetadata,
+  graph,
+  webPageSchema,
+} from "@/lib/seo";
 import { PageShell } from "@/components/layout/page-shell";
 import { AdSlot } from "@/components/ads/ad-slot";
 import { RailAds } from "@/components/ads/rail-ads";
@@ -27,10 +33,44 @@ export default async function BlogPage() {
   // An in-feed ad after the third post keeps the list readable.
   const inFeedAfter = 3;
 
+  const crumbs = [
+    { name: "Home", path: "/" },
+    { name: "Blog", path: "/blog" },
+  ];
+
   return (
     <>
       <RailAds />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={graph(
+          {
+            ...webPageSchema({
+              path: "/blog",
+              name: "Haven Blog",
+              description:
+                "Practical guides on temporary email, disposable inboxes, email security, and online privacy.",
+              breadcrumb: true,
+            }),
+            "@type": "CollectionPage",
+          },
+          breadcrumbSchema(crumbs, "/blog"),
+          posts.length
+            ? {
+                "@type": "ItemList",
+                itemListElement: posts.map((post, index) => ({
+                  "@type": "ListItem",
+                  position: index + 1,
+                  url: absoluteUrl(`/blog/${post.slug}`),
+                  name: post.title,
+                })),
+              }
+            : null,
+        )}
+      />
       <PageShell
+        path="/blog"
+        crumbs={crumbs}
         eyebrow="Journal"
         title="Privacy, plainly explained"
         description="Notes on disposable mail, retention, deliverability, and using privacy tools without magical thinking."
