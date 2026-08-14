@@ -17,6 +17,7 @@ Haven is a **privacy services platform**. Temporary email ships first. SMS, API,
 - Admin console with RBAC and audit logs
 - Public API with hashed keys (`tmp_live_` / `tmp_test_`)
 - SEO landers, blog, legal pages, i18n (EN/UR/HI/AR/ES/FR/DE, RTL for AR/UR)
+- Technical SEO: per-page metadata, JSON-LD, breadcrumbs, curated sitemap, and layered index control that keeps mailbox contents out of search
 - PWA chrome (the mail service itself is not claimed to work offline)
 
 We do **not** claim the product is anonymous or untraceable.
@@ -55,6 +56,7 @@ Seeded operator (change immediately):
 | [`docs/api.md`](docs/api.md) | Public HTTP API |
 | [`docs/advertising.md`](docs/advertising.md) | Ad slots, admin configuration, and placement policy |
 | [`docs/payments.md`](docs/payments.md) | Stripe and manual payment configuration and review |
+| [`docs/seo.md`](docs/seo.md) | Metadata, structured data, keyword map, and index control |
 
 ## Local data
 

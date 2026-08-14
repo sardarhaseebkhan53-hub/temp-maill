@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { isRtl } from "@/i18n";
 import type { Locale } from "@/types";
 import { LOCALES } from "@/types";
+import { getEnv } from "@/config/env";
 import "@/styles/globals.css";
 
 export const metadata: Metadata = {
@@ -38,6 +39,15 @@ export const metadata: Metadata = {
     ],
   },
   twitter: { card: "summary_large_image", site: "@havenmail" },
+  // Only emitted when an operator has configured a token.
+  verification: {
+    ...(getEnv().GOOGLE_SITE_VERIFICATION
+      ? { google: getEnv().GOOGLE_SITE_VERIFICATION }
+      : {}),
+    ...(getEnv().BING_SITE_VERIFICATION
+      ? { other: { "msvalidate.01": getEnv().BING_SITE_VERIFICATION } }
+      : {}),
+  },
   formatDetection: { telephone: false, address: false, email: false },
 };
 
