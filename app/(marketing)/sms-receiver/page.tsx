@@ -1,5 +1,8 @@
 import { SmsPanel } from "@/components/features/sms-panel";
 import { buildMetadata } from "@/lib/seo";
+import { PageShell } from "@/components/layout/page-shell";
+import { AdSlot } from "@/components/ads/ad-slot";
+import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
   title: "SMS Receiver — Capture Test Texts",
@@ -7,17 +10,19 @@ export const metadata = buildMetadata({
   path: "/sms-receiver",
 });
 
-export default function Page() {
+export default async function Page() {
+  const ads = await resolveAdSlots(["TOP_LEADERBOARD", "RECTANGLE", "CONTENT"]);
+
   return (
-    <div className="container py-12">
-      <h1 className="font-display text-4xl font-semibold">SMS receiver for tests you own</h1>
-      <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-        Capture inbound SMS on a short-lived number. Release it when the test is done. Numbers come from a provider
-        adapter — Twilio, Vonage, or a development pool.
-      </p>
-      <div className="mt-10">
-        <SmsPanel />
-      </div>
-    </div>
+    <PageShell
+      eyebrow="Temporary SMS"
+      title="SMS receiver for tests you own"
+      description="Capture inbound SMS on a short-lived number and release it when the test is done. Numbers come from a provider adapter — Twilio, Vonage, or a development pool."
+      aside={<AdSlot slot="RECTANGLE" resolved={ads.RECTANGLE} />}
+    >
+      <AdSlot slot="TOP_LEADERBOARD" resolved={ads.TOP_LEADERBOARD} />
+      <SmsPanel />
+      <AdSlot slot="CONTENT" resolved={ads.CONTENT} />
+    </PageShell>
   );
 }

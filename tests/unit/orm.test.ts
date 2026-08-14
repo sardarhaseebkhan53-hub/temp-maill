@@ -22,7 +22,7 @@ describe("mini ORM invariants", () => {
 
     const others = await prisma.featureFlag.findMany({ where: { key: { not: key } } });
     expect(Array.isArray(others)).toBe(true);
-    expect(others.every((flag: { key: string }) => flag.key !== key)).toBe(true);
+    expect(others.every((flag) => flag.key !== key)).toBe(true);
   });
 
   it("still resolves genuine compound unique lookups", async () => {

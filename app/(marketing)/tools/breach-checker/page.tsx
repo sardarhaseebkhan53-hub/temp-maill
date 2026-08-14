@@ -1,5 +1,8 @@
 import { buildMetadata } from "@/lib/seo";
 import { BreachForm } from "@/components/features/breach-form";
+import { PageShell } from "@/components/layout/page-shell";
+import { AdSlot } from "@/components/ads/ad-slot";
+import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
   title: "Username Breach Checker — Haven",
@@ -7,17 +10,21 @@ export const metadata = buildMetadata({
   path: "/tools/breach-checker",
 });
 
-export default function Page() {
+export default async function Page() {
+  const ads = await resolveAdSlots(["TOP_LEADERBOARD", "RECTANGLE", "TOOLS"]);
+
   return (
-    <div className="container py-12 max-w-xl">
-      <h1 className="font-display text-3xl font-semibold">Username / password breach hint</h1>
-      <p className="mt-3 text-muted-foreground">
-        This tool never sends your password to a third party. It checks locally against a small educational wordlist
-        and common patterns. It is not a substitute for a dedicated breach service.
-      </p>
-      <div className="mt-8">
+    <PageShell
+      eyebrow="Privacy tool"
+      title="Username / password breach hint"
+      description="This tool never sends your password to a third party. It checks locally against a small educational wordlist and common patterns, and is not a substitute for a dedicated breach service."
+      aside={<AdSlot slot="RECTANGLE" resolved={ads.RECTANGLE} />}
+    >
+      <AdSlot slot="TOP_LEADERBOARD" resolved={ads.TOP_LEADERBOARD} />
+      <div className="max-w-xl min-w-0">
         <BreachForm />
       </div>
-    </div>
+      <AdSlot slot="TOOLS" resolved={ads.TOOLS} />
+    </PageShell>
   );
 }

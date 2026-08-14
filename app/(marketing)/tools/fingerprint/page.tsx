@@ -1,5 +1,8 @@
 import { buildMetadata } from "@/lib/seo";
 import { FingerprintPanel } from "@/components/features/fingerprint-panel";
+import { PageShell } from "@/components/layout/page-shell";
+import { AdSlot } from "@/components/ads/ad-slot";
+import { resolveAdSlots } from "@/server/services/ads";
 
 export const metadata = buildMetadata({
   title: "Browser Fingerprint & Tracker Check — Haven",
@@ -7,16 +10,21 @@ export const metadata = buildMetadata({
   path: "/tools/fingerprint",
 });
 
-export default function Page() {
+export default async function Page() {
+  const ads = await resolveAdSlots(["TOP_LEADERBOARD", "RECTANGLE", "TOOLS"]);
+
   return (
-    <div className="container py-12 max-w-2xl">
-      <h1 className="font-display text-3xl font-semibold">What this browser reveals</h1>
-      <p className="mt-3 text-muted-foreground">
-        A small educational panel. It does not claim to uniquely identify you and it does not store a fingerprint.
-      </p>
-      <div className="mt-8">
+    <PageShell
+      eyebrow="Privacy tool"
+      title="What this browser reveals"
+      description="A small educational panel. It does not claim to uniquely identify you and it does not store a fingerprint."
+      aside={<AdSlot slot="RECTANGLE" resolved={ads.RECTANGLE} />}
+    >
+      <AdSlot slot="TOP_LEADERBOARD" resolved={ads.TOP_LEADERBOARD} />
+      <div className="max-w-2xl min-w-0">
         <FingerprintPanel />
       </div>
-    </div>
+      <AdSlot slot="TOOLS" resolved={ads.TOOLS} />
+    </PageShell>
   );
 }
