@@ -48,7 +48,22 @@ export async function adminKpis() {
     orderBy: { day: "asc" },
     take: 30,
   });
+
+  const since30d = new Date(Date.now() - 30 * 86400000);
+  const [newUsers, messagesTotal, approvedPayments, enabledSlots, totalSlots] = await Promise.all([
+    prisma.user.count({ where: { createdAt: { gte: since30d } } }),
+    prisma.emailMessage.count(),
+    prisma.manualPayment.count({ where: { adminStatus: "APPROVED" } }),
+    prisma.adPlacement.count({ where: { enabled: true } }),
+    prisma.adPlacement.count(),
+  ]);
+
   return {
+    newUsers,
+    messagesTotal,
+    approvedPayments,
+    enabledSlots,
+    totalSlots,
     users,
     activeUsers,
     mailboxes,

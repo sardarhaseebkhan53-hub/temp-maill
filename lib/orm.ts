@@ -236,6 +236,7 @@ const UNIQUES: Record<string, string[][]> = {
   Subscription: [["id"]],
   Payment: [["id"]],
   ManualPayment: [["paymentId"], ["id"]],
+  PaymentMethod: [["key"], ["id"]],
   Coupon: [["code"], ["id"]],
   CouponRedemption: [["couponId", "userId"]],
   Referral: [["refereeId"], ["id"]],
@@ -389,9 +390,20 @@ function flattenWhere(model: string, where?: AnyRec): AnyRec | undefined {
       out[k] = v;
       continue;
     }
+    // Only expand genuine compound-unique lookups such as
+    // `{ placementId_day: { placementId, day } }`. A single-column unique
+    // named e.g. `key` must not swallow a filter object like
+    // `{ key: { not: "FREE" } }`.
     const uniques = UNIQUES[model] || [];
-    const match = uniques.find((u) => u.join("_") === k);
-    if (match && v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date)) {
+    const match = uniques.find((u) => u.length > 1 && u.join("_") === k);
+    if (
+      match &&
+      v &&
+      typeof v === "object" &&
+      !Array.isArray(v) &&
+      !(v instanceof Date) &&
+      match.every((field) => field in (v as AnyRec))
+    ) {
       Object.assign(out, v as AnyRec);
       continue;
     }

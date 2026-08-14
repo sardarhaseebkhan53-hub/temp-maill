@@ -2,69 +2,117 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requirePermission } from "@/lib/auth";
 import { HavenWordmark } from "@/components/brand/logo";
+import { AdminNav } from "@/components/layout/admin-nav";
 
-const nav = [
-  ["/admin", "Dashboard"],
-  ["/admin/users", "Users"],
-  ["/admin/mailboxes", "Mailboxes"],
-  ["/admin/inbox-monitor", "Inbox monitor"],
-  ["/admin/domains", "Domains"],
-  ["/admin/email-providers", "Email providers"],
-  ["/admin/sms-providers", "SMS providers"],
-  ["/admin/plans", "Plans"],
-  ["/admin/subscriptions", "Subscriptions"],
-  ["/admin/payments", "Payments"],
-  ["/admin/coupons", "Coupons"],
-  ["/admin/ads", "Ads"],
-  ["/admin/ad-analytics", "Ad analytics"],
-  ["/admin/api", "API"],
-  ["/admin/reports", "Reports"],
-  ["/admin/security", "Security"],
-  ["/admin/rate-limits", "Rate limits"],
-  ["/admin/settings", "Settings"],
-  ["/admin/seo", "SEO"],
-  ["/admin/pages", "Pages"],
-  ["/admin/blog", "Blog"],
-  ["/admin/faq", "FAQ"],
-  ["/admin/translations", "Translations"],
-  ["/admin/notifications", "Notifications"],
-  ["/admin/logs", "Logs"],
-  ["/admin/audit", "Audit"],
-  ["/admin/backups", "Backups"],
-  ["/admin/maintenance", "Maintenance"],
-  ["/admin/flags", "Flags"],
-  ["/admin/tickets", "Tickets"],
+const nav: { group: string; items: [string, string][] }[] = [
+  {
+    group: "Overview",
+    items: [
+      ["/admin", "Dashboard"],
+      ["/admin/users", "Users"],
+      ["/admin/mailboxes", "Mailboxes"],
+      ["/admin/inbox-monitor", "Inbox monitor"],
+    ],
+  },
+  {
+    group: "Revenue",
+    items: [
+      ["/admin/payments", "Payments"],
+      ["/admin/plans", "Plans"],
+      ["/admin/subscriptions", "Subscriptions"],
+      ["/admin/coupons", "Coupons"],
+    ],
+  },
+  {
+    group: "Monetization",
+    items: [
+      ["/admin/ads", "Ads"],
+      ["/admin/ad-analytics", "Ad analytics"],
+    ],
+  },
+  {
+    group: "Delivery",
+    items: [
+      ["/admin/domains", "Domains"],
+      ["/admin/email-providers", "Email providers"],
+      ["/admin/sms-providers", "SMS providers"],
+      ["/admin/api", "API"],
+    ],
+  },
+  {
+    group: "Content",
+    items: [
+      ["/admin/blog", "Blog"],
+      ["/admin/pages", "Pages"],
+      ["/admin/faq", "FAQ"],
+      ["/admin/seo", "SEO"],
+      ["/admin/translations", "Translations"],
+      ["/admin/notifications", "Notifications"],
+    ],
+  },
+  {
+    group: "Safety",
+    items: [
+      ["/admin/reports", "Reports"],
+      ["/admin/security", "Security"],
+      ["/admin/rate-limits", "Rate limits"],
+      ["/admin/audit", "Audit"],
+      ["/admin/logs", "Logs"],
+      ["/admin/tickets", "Tickets"],
+    ],
+  },
+  {
+    group: "System",
+    items: [
+      ["/admin/settings", "Settings"],
+      ["/admin/flags", "Flags"],
+      ["/admin/maintenance", "Maintenance"],
+      ["/admin/backups", "Backups"],
+    ],
+  },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  // Server-side gate: admin pages are never merely hidden in the client.
   try {
     await requirePermission("admin.access");
   } catch {
     redirect("/login?next=/admin");
   }
+
   return (
-    <div className="min-h-screen grid lg:grid-cols-[240px_1fr]">
-      <aside className="border-r bg-card/40 p-4 hidden lg:block">
-        <Link href="/" className="block mb-6">
-          <HavenWordmark />
-        </Link>
-        <nav className="space-y-0.5 max-h-[calc(100vh-6rem)] overflow-y-auto pr-1">
-          {nav.map(([href, label]) => (
-            <Link key={href} href={href ?? "/admin"} className="block rounded-lg px-3 py-2 text-sm hover:bg-muted">
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-      <div>
-        <div className="lg:hidden border-b p-3 overflow-x-auto flex gap-2">
-          {nav.map(([href, label]) => (
-            <Link key={href} href={href ?? "/admin"} className="text-xs whitespace-nowrap rounded-full border px-2 py-1">
-              {label}
-            </Link>
-          ))}
+    <div className="min-h-screen min-w-0 bg-[#06080d] text-slate-200">
+      <div className="grid min-w-0 lg:grid-cols-[248px_minmax(0,1fr)]">
+        <aside className="hidden min-w-0 border-r border-white/[0.07] bg-[#080b12] p-4 lg:block">
+          <Link href="/" className="mb-6 block">
+            <HavenWordmark />
+          </Link>
+          <nav className="max-h-[calc(100vh-7rem)] space-y-4 overflow-y-auto pr-1">
+            {nav.map((section) => (
+              <div key={section.group} className="min-w-0">
+                <p className="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">
+                  {section.group}
+                </p>
+                <div className="space-y-0.5">
+                  {section.items.map(([href, label]) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      className="block truncate rounded-lg px-3 py-2 text-sm text-slate-300 transition-colors hover:bg-white/[0.06] hover:text-white"
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="min-w-0">
+          <AdminNav sections={nav} />
+          <div className="min-w-0 p-4 sm:p-6">{children}</div>
         </div>
-        <div className="p-6">{children}</div>
       </div>
     </div>
   );
