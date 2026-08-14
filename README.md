@@ -12,7 +12,8 @@ Haven is a **privacy services platform**. Temporary email ships first. SMS, API,
 - Server-enforced expiry and retention jobs
 - Database-driven domains, plans, limits, ads, flags, and copy
 - Accounts (optional): aliases, API keys, billing, sessions
-- Stripe + manual/regional payments (JazzCash / Easypaisa / bank). Premium never activates from a client claim.
+- Stripe + admin-configurable manual/regional payments (JazzCash / Easypaisa / bank). Premium never activates from a client claim.
+- Database-driven advertising with ten administrable slots; every paid plan is ad-free
 - Admin console with RBAC and audit logs
 - Public API with hashed keys (`tmp_live_` / `tmp_test_`)
 - SEO landers, blog, legal pages, i18n (EN/UR/HI/AR/ES/FR/DE, RTL for AR/UR)
@@ -45,6 +46,15 @@ Seeded operator (change immediately):
 | `npm run test` | Vitest (unit, integration, security) |
 | `npm run build` | Production build |
 | `npm run start` | Serve the production build |
+
+## Documentation
+
+| Doc | Contents |
+| --- | --- |
+| [`docs/architecture.md`](docs/architecture.md) | Layers, data flow, and design rules |
+| [`docs/api.md`](docs/api.md) | Public HTTP API |
+| [`docs/advertising.md`](docs/advertising.md) | Ad slots, admin configuration, and placement policy |
+| [`docs/payments.md`](docs/payments.md) | Stripe and manual payment configuration and review |
 
 ## Local data
 

@@ -89,6 +89,13 @@
     min-width: 0;
   }
 
+  /* Nothing may introduce a horizontal scrollbar on the document. Individual
+     wide elements (tables, code blocks) opt into their own overflow-x-auto. */
+  html,
+  body {
+    @apply max-w-full overflow-x-hidden;
+  }
+
   ::selection {
     background: rgba(0, 245, 160, 0.3);
     color: #ffffff;
