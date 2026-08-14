@@ -101,9 +101,9 @@ export function InboxList({
               <Inbox className="size-6" aria-hidden="true" />
               <span className="absolute -right-1 -top-1 size-3 rounded-full border-2 border-[#0c1017] bg-[#00f5a0]" />
             </div>
-            <h3 className="font-display text-base font-bold text-white">No messages yet</h3>
+            <h3 className="font-display text-base font-bold text-white">Your inbox is ready.</h3>
             <p className="mt-2 max-w-sm text-xs leading-relaxed text-slate-400 sm:text-sm">
-              Your temporary inbox is ready. Emails sent to this address will appear here automatically.
+              Messages sent to your temporary address will appear here automatically.
             </p>
             {mailboxAddress && onCopyAddress ? (
               <button
