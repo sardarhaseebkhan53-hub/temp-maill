@@ -7,6 +7,10 @@ import { getEnv } from "@/config/env";
 import { nowPlusMinutes } from "@/lib/utils";
 import { getPlanLimits, limitBool, limitNumber } from "@/server/services/plans";
 import type { MailboxState, PlanKey, PublicMailbox, SessionUser } from "@/types";
+import {
+  deliveryReadinessForDomain,
+  isDomainAssignable,
+} from "@/server/services/email-delivery";
 
 const EXPIRING_DEFAULT = 5;
 
@@ -17,10 +21,11 @@ export async function listAssignableDomains(planKey: PlanKey) {
       : planKey === "PRO" || planKey === "DEVELOPER"
         ? ["FREE", "PREMIUM_ONLY"]
         : ["FREE"];
-  return prisma.emailDomain.findMany({
+  const domains = await prisma.emailDomain.findMany({
     where: { status: "ACTIVE", eligibility: { in: eligibility } },
     orderBy: { weight: "desc" },
   });
+  return domains.filter(isDomainAssignable);
 }
 
 function pickWeighted<T extends { weight: number }>(items: T[]): T { // items may be Row[]
@@ -58,13 +63,15 @@ export async function transitionMailbox(
   return box;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toPublicMailbox(box: any, favorite = false): PublicMailbox {
+  const delivery = deliveryReadinessForDomain(
+    box.domain ?? { mxRequired: true, mxOk: false },
+  );
   return {
     id: box.id,
     address: box.address,
     localPart: box.localPart,
-    domain: box.domain.domain,
+    domain: box.domain?.domain ?? "",
     state: box.state as MailboxState,
     expiresAt: box.expiresAt instanceof Date ? box.expiresAt.toISOString() : String(box.expiresAt),
     custom: box.custom,
@@ -73,6 +80,10 @@ export function toPublicMailbox(box: any, favorite = false): PublicMailbox {
     messageCount: box.messageCount,
     unreadCount: box.unreadCount,
     favorite,
+    deliveryReady: delivery.ready,
+    deliveryStatus: delivery.status,
+    deliveryProvider: delivery.provider,
+    deliveryDetail: delivery.detail,
   };
 }
 
@@ -224,7 +235,6 @@ export async function getMailboxById(id: string) {
   return refreshMailboxState(box);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function refreshMailboxState(box: any) {
   const expires = box.expiresAt instanceof Date ? box.expiresAt : new Date(box.expiresAt);
   const next = await resolveState(expires, box.state as MailboxState);
@@ -296,7 +306,6 @@ export async function regenerateMailbox(oldId: string, ctx: { user?: SessionUser
 }
 
 export async function canAccessMailbox(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   box: any,
   ctx: { userId?: string; guestBoxes?: string[]; token?: string },
 ): Promise<boolean> {

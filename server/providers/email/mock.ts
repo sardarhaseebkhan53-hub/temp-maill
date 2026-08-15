@@ -38,6 +38,7 @@ export class MockInboundEmailProvider implements InboundEmailProvider {
   }
 
   async health() {
-    return { ok: true, detail: allowMockProviders() ? "mock ready" : "disabled in production" };
+    const enabled = allowMockProviders();
+    return { ok: enabled, detail: enabled ? "development test adapter" : "disabled in production" };
   }
 }

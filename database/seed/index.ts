@@ -4,6 +4,11 @@ import { randomBytes } from "node:crypto";
 import { getEnv } from "../../config/env";
 import { prisma } from "../../lib/db";
 import { purgeLegacyInjectedMessages } from "../../server/services/legacy-data-cleanup";
+import {
+  isValidEmailDomain,
+  normalizeEmailDomain,
+  verifyDomainMx,
+} from "../../server/services/email-delivery";
 import { blogCategories, blogPosts } from "./blog-content";
 
 async function hashPassword(password: string) {
@@ -106,52 +111,139 @@ async function main() {
     });
   }
 
-  const domains = [
-    // .test domains (development)
-    { domain: "mail.haven.test", displayName: "Haven Mail", status: "ACTIVE", eligibility: "FREE", weight: 70, mxOk: true },
-    { domain: "inbox.haven.test", displayName: "Haven Inbox", status: "ACTIVE", eligibility: "FREE", weight: 65, mxOk: true },
-    { domain: "quick.haven.test", displayName: "Haven Quick", status: "ACTIVE", eligibility: "FREE", weight: 60, mxOk: true },
-
-    // Professional .com domains (FREE tier) - realistic temp mail style (like temp-mail.org)
-    { domain: "playboot.com", displayName: "Playboot", status: "ACTIVE", eligibility: "FREE", weight: 130, mxOk: true },
-    { domain: "inboxhub.com", displayName: "InboxHub", status: "ACTIVE", eligibility: "FREE", weight: 120, mxOk: true },
-    { domain: "maildrop.com", displayName: "MailDrop", status: "ACTIVE", eligibility: "FREE", weight: 115, mxOk: true },
-    { domain: "tempinbox.com", displayName: "TempInbox", status: "ACTIVE", eligibility: "FREE", weight: 110, mxOk: true },
-    { domain: "quickmail.com", displayName: "QuickMail", status: "ACTIVE", eligibility: "FREE", weight: 105, mxOk: true },
-    { domain: "disposablemail.com", displayName: "DisposableMail", status: "ACTIVE", eligibility: "FREE", weight: 100, mxOk: true },
-
-    // Premium domains
-    { domain: "pro.haven.test", displayName: "Haven Pro", status: "ACTIVE", eligibility: "PREMIUM_ONLY", weight: 40, mxOk: true },
-    { domain: "corp.haven.test", displayName: "Haven Business", status: "ACTIVE", eligibility: "BUSINESS_ONLY", weight: 20, mxOk: true },
+  const emailEnv = getEnv();
+  const developmentDomains = [
+    { domain: "mail.haven.test", displayName: "Haven Mail", eligibility: "FREE", weight: 70 },
+    { domain: "inbox.haven.test", displayName: "Haven Inbox", eligibility: "FREE", weight: 65 },
+    { domain: "quick.haven.test", displayName: "Haven Quick", eligibility: "FREE", weight: 60 },
+    { domain: "pro.haven.test", displayName: "Haven Pro", eligibility: "PREMIUM_ONLY", weight: 40 },
+    { domain: "corp.haven.test", displayName: "Haven Business", eligibility: "BUSINESS_ONLY", weight: 20 },
   ];
-  for (const d of domains) {
+  const developmentMode = emailEnv.NODE_ENV !== "production" && emailEnv.EMAIL_INBOUND_PROVIDER === "mock";
+  for (const domain of developmentDomains) {
     await prisma.emailDomain.upsert({
-      where: { domain: d.domain },
-      update: d,
-      create: { ...d, mxRequired: true, catchAll: true, lastHealthAt: new Date(), lastHealthNote: "seed" },
+      where: { domain: domain.domain },
+      update: {
+        ...domain,
+        status: developmentMode ? "ACTIVE" : "DISABLED",
+        mxRequired: false,
+        mxOk: false,
+        lastHealthAt: new Date(),
+        lastHealthNote: developmentMode
+          ? "Development-only test domain; it does not receive internet email."
+          : "Disabled outside local mock mode.",
+      },
+      create: {
+        ...domain,
+        status: developmentMode ? "ACTIVE" : "DISABLED",
+        mxRequired: false,
+        mxOk: false,
+        catchAll: true,
+        lastHealthAt: new Date(),
+        lastHealthNote: developmentMode
+          ? "Development-only test domain; it does not receive internet email."
+          : "Disabled outside local mock mode.",
+      },
     });
   }
 
-  await prisma.emailProvider.upsert({
-    where: { key: "mock" },
-    update: { enabled: true, isDefault: true, adapter: "mock", healthStatus: "HEALTHY" },
-    create: { key: "mock", name: "Development inbound", adapter: "mock", enabled: true, isDefault: true, healthStatus: "HEALTHY" },
-  });
-  await prisma.emailProvider.upsert({
-    where: { key: "mailgun" },
-    update: { adapter: "mailgun" },
-    create: { key: "mailgun", name: "Mailgun", adapter: "mailgun", enabled: false },
-  });
-  await prisma.emailProvider.upsert({
-    where: { key: "postmark" },
-    update: { adapter: "postmark" },
-    create: { key: "postmark", name: "Postmark", adapter: "postmark", enabled: false },
-  });
-  await prisma.emailProvider.upsert({
-    where: { key: "smtp" },
-    update: { adapter: "smtp" },
-    create: { key: "smtp", name: "Direct SMTP", adapter: "smtp", enabled: false },
-  });
+  // Earlier versions advertised these unrelated public domains as MX-ready.
+  // This deployment does not control them, so always retire those seed rows.
+  const retiredUnownedDomains = [
+    "playboot.com",
+    "inboxhub.com",
+    "maildrop.com",
+    "tempinbox.com",
+    "quickmail.com",
+    "disposablemail.com",
+  ];
+  for (const domain of retiredUnownedDomains) {
+    const existing = await prisma.emailDomain.findUnique({ where: { domain } });
+    if (!existing) continue;
+    await prisma.emailDomain.update({
+      where: { id: existing.id },
+      data: {
+        status: "DISABLED",
+        mxOk: false,
+        mxRequired: true,
+        lastHealthAt: new Date(),
+        lastHealthNote: "Retired: domain ownership and inbound MX routing were never configured.",
+      },
+    });
+  }
+
+  // Operators opt in only domains they own. DNS must point at the selected
+  // receiver before a configured domain becomes assignable.
+  const configuredDomains = [...new Set(
+    emailEnv.EMAIL_DOMAINS.split(",").map(normalizeEmailDomain).filter(Boolean),
+  )];
+  const invalidConfiguredDomains = configuredDomains.filter(
+    (domain) => !isValidEmailDomain(domain) || !domain.endsWith(".com"),
+  );
+  if (invalidConfiguredDomains.length > 0) {
+    throw new Error(
+      `EMAIL_DOMAINS must contain only valid operator-owned .com domains: ${invalidConfiguredDomains.join(", ")}`,
+    );
+  }
+  for (const domain of configuredDomains) {
+    const verification = await verifyDomainMx(domain);
+    await prisma.emailDomain.upsert({
+      where: { domain },
+      update: {
+        status: verification.ok ? "ACTIVE" : "DEGRADED",
+        mxRequired: true,
+        mxOk: verification.ok,
+        lastHealthAt: new Date(),
+        lastHealthNote: verification.note,
+      },
+      create: {
+        domain,
+        displayName: domain,
+        status: verification.ok ? "ACTIVE" : "DEGRADED",
+        eligibility: "FREE",
+        weight: 100,
+        mxRequired: true,
+        mxOk: verification.ok,
+        catchAll: true,
+        lastHealthAt: new Date(),
+        lastHealthNote: verification.note,
+      },
+    });
+  }
+
+  const selectedInbound = emailEnv.EMAIL_INBOUND_PROVIDER;
+  const emailProviders = [
+    { key: "mock", name: "Development inbound", adapter: "mock" },
+    { key: "mailgun", name: "Mailgun", adapter: "mailgun" },
+    { key: "postmark", name: "Postmark", adapter: "postmark" },
+    { key: "smtp", name: "Direct SMTP", adapter: "smtp" },
+  ];
+  for (const provider of emailProviders) {
+    const selected = provider.key === selectedInbound;
+    const healthy =
+      provider.key === "mock"
+        ? developmentMode
+        : provider.key === "mailgun"
+          ? Boolean(emailEnv.MAILGUN_WEBHOOK_SIGNING_KEY)
+          : provider.key === "postmark"
+            ? Boolean(emailEnv.POSTMARK_WEBHOOK_USER && emailEnv.POSTMARK_WEBHOOK_PASS)
+            : Boolean(emailEnv.EMAIL_EXPECTED_MX);
+    await prisma.emailProvider.upsert({
+      where: { key: provider.key },
+      update: {
+        ...provider,
+        enabled: selected,
+        isDefault: selected,
+        healthStatus: selected ? (healthy ? "HEALTHY" : "DEGRADED") : "UNKNOWN",
+      },
+      create: {
+        ...provider,
+        enabled: selected,
+        isDefault: selected,
+        healthStatus: selected ? (healthy ? "HEALTHY" : "DEGRADED") : "UNKNOWN",
+      },
+    });
+  }
 
   await prisma.smsProvider.upsert({
     where: { key: "mock" },

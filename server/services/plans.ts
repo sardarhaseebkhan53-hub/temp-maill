@@ -17,7 +17,6 @@ export async function getPlanByKey(key: string) {
   });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toView(plan: any): PlanView {
   const limits: Record<string, string> = {};
   for (const l of plan.limits) limits[l.key] = l.value;

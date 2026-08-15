@@ -57,7 +57,12 @@ export function Reveal({
   );
 
   if (asChild) {
-    const child = Children.only(children);
+    // React Server Components can deserialize a single JSX child as a
+    // one-item array. Children.only() rejects that shape and used to take the
+    // entire marketing homepage down with a 500, even though there is still
+    // exactly one element to enhance.
+    const childNodes = Children.toArray(children);
+    const child = childNodes.length === 1 ? childNodes[0] : null;
     if (isValidElement<{ className?: string; ref?: React.Ref<HTMLElement> }>(child)) {
       return cloneElement(child, {
         ref,

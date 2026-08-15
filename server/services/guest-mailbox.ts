@@ -3,14 +3,18 @@ import { createMailbox, getMailboxById, refreshMailboxState, toPublicMailbox } f
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import type { PublicMailbox } from "@/types";
+import { isDomainAssignable } from "@/server/services/email-delivery";
 
-export async function getOrCreateGuestMailbox(): Promise<PublicMailbox> {
+export async function getOrCreateGuestMailbox(): Promise<PublicMailbox | null> {
   const user = (await getCurrentUser().catch(() => null))?.user ?? null;
   const guest = await getGuest();
   if (guest.boxes[0]) {
     try {
       const existing = await getMailboxById(guest.boxes[0]);
-      if (existing.state === "ACTIVE" || existing.state === "EXPIRING_SOON") {
+      if (
+        (existing.state === "ACTIVE" || existing.state === "EXPIRING_SOON") &&
+        isDomainAssignable(existing.domain)
+      ) {
         return toPublicMailbox(existing);
       }
     } catch {
@@ -23,8 +27,12 @@ export async function getOrCreateGuestMailbox(): Promise<PublicMailbox> {
       include: { domain: true },
       orderBy: { createdAt: "desc" },
     });
-    if (latest) return toPublicMailbox(await refreshMailboxState(latest));
+    if (latest && isDomainAssignable(latest.domain)) {
+      return toPublicMailbox(await refreshMailboxState(latest));
+    }
   }
+  const availableDomains = await listDomainsForViewer();
+  if (availableDomains.length === 0) return null;
   const created = await createMailbox({ user, guestKey: guest.gid });
   return toPublicMailbox(created.mailbox);
 }

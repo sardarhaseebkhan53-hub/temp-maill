@@ -4,6 +4,7 @@ import { getSettingNumber, SettingKeys } from "@/lib/settings";
 import { transitionMailbox } from "@/server/services/mailbox";
 import { sweepSmsNumbers } from "@/server/services/sms";
 import { getStorage } from "@/server/providers/storage";
+import { refreshAllDomainMx } from "@/server/services/email-delivery";
 
 async function runJob(name: string, fn: () => Promise<unknown>) {
   const row = await prisma.jobRun.create({ data: { job: name, status: "RUNNING" } });
@@ -199,6 +200,9 @@ export async function rollupAnalytics() {
 export async function runAllJobs() {
   const results: Record<string, unknown> = {};
   results.expire = await expireMailboxes().catch((e) => ({ error: String(e) }));
+  results.domains = await runJob("verify-domain-mx", () => refreshAllDomainMx(15)).catch((e) => ({
+    error: String(e),
+  }));
   results.sms = await runJob("sweep-sms-numbers", () => sweepSmsNumbers()).catch((e) => ({
     error: String(e),
   }));

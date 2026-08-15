@@ -19,6 +19,10 @@ const schema = z.object({
   MAILGUN_API_KEY: z.string().optional().default(""),
   MAILGUN_WEBHOOK_SIGNING_KEY: z.string().optional().default(""),
   MAILGUN_DOMAIN: z.string().optional().default(""),
+  /** Comma-separated domains controlled by this deployment and offered to users. */
+  EMAIL_DOMAINS: z.string().optional().default(""),
+  /** Comma-separated MX hostnames/suffixes expected during DNS verification. */
+  EMAIL_EXPECTED_MX: z.string().optional().default(""),
   POSTMARK_SERVER_TOKEN: z.string().optional().default(""),
   POSTMARK_WEBHOOK_USER: z.string().optional().default(""),
   POSTMARK_WEBHOOK_PASS: z.string().optional().default(""),

@@ -585,7 +585,6 @@ export class MiniPrisma {
 
   private makeDelegate(model: string) {
     // Delegate methods close over the client instance.
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return {
       async findUnique(args: { where: AnyRec; include?: AnyRec; select?: AnyRec }) {

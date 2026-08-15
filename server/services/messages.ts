@@ -3,7 +3,6 @@ import { Errors } from "@/lib/errors";
 import type { PublicAttachment, PublicMessage, PublicMessageDetail } from "@/types";
 import { getStorage } from "@/server/providers/storage";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function toPublicMessage(m: any): PublicMessage {
   return {
     id: m.id,

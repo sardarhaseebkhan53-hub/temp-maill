@@ -25,8 +25,6 @@ import type { SessionUser } from "@/types";
  * (default 24h, admin-configurable) has elapsed; that is what stops a new
  * user from receiving the previous renter's SMS.
  */
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SmsNumberRow = any;
 
 export interface PublicSmsNumber {

@@ -10,7 +10,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ provider: stri
   try {
     const { provider } = await ctx.params;
     await assertRateLimit("inbound.webhook", getClientIp(req.headers));
-    const raw = await req.text();
+    // Keep the original request body available for multipart providers such as
+    // Mailgun while retaining raw bytes/text for HMAC and JSON adapters.
+    const raw = await req.clone().text();
     const adapter = getInboundProvider(provider);
     const verified = await adapter.verify(req, raw);
     if (!verified) throw Errors.forbidden();

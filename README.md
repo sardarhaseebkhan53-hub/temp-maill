@@ -31,7 +31,7 @@ npm run db:seed
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). An inbox is created on first paint.
+Open [http://localhost:3000](http://localhost:3000). In the default mock configuration, a clearly labelled `.test` inbox is created on first paint. Use **Send local test** to exercise storage, SSE/polling, sanitization, and the reader. Mock mode does not receive mail from the public internet.
 
 Seeded operator (change immediately):
 
@@ -107,7 +107,26 @@ Inbound email adapters:
 | `smtp` | `POST /api/v1/inbound/smtp` (HMAC `x-haven-smtp-signature`) |
 | `mock` | Development only — never enabled when `NODE_ENV=production` |
 
-Point the provider’s inbound route / MX at a Haven domain you added in **Admin → Domains**.
+Use the provider-specific webhook aliases:
+
+- Mailgun: `POST /api/webhooks/mailgun/inbound` (signed multipart form, including attachments)
+- Postmark: `POST /api/webhooks/postmark/inbound` (JSON plus webhook Basic Auth)
+- Custom SMTP receiver: `POST /api/v1/inbound/smtp` (normalized JSON plus HMAC)
+
+### Making a real `.com` inbox receive mail
+
+Haven deliberately does not seed unrelated public `.com` names. A realistic address is not a working address unless the deployment controls its DNS and receiving path.
+
+1. Register or use a `.com` domain you control.
+2. Set `EMAIL_DOMAINS=mail.your-domain.com` and select `EMAIL_INBOUND_PROVIDER`.
+3. Configure the provider credentials shown in `.env.example`.
+4. Add the provider’s receiving MX records in DNS. For a custom SMTP receiver, set `EMAIL_EXPECTED_MX` to its public hostname.
+5. Configure the provider webhook to the corresponding HTTPS endpoint above.
+6. Run `npm run db:seed`, then use **Admin → Domains → Verify MX**.
+7. Check `/api/health`: `publicMailDelivery.ok` must be `true` before launch.
+8. Send an end-to-end message from an unrelated external mailbox and confirm it appears.
+
+Domains remain `DEGRADED` and cannot be assigned until the expected MX target is verified. Provider authentication and webhook signature checks fail closed. A valid, receiving `.com` address can still be rejected by eBay, chat platforms, or other third parties under their own disposable-email and anti-abuse policies; Haven cannot bypass those policies.
 
 SMS adapters: `twilio`, `vonage`, `mock` (dev). Payments: `stripe` (signed webhooks) or `manual`.
 

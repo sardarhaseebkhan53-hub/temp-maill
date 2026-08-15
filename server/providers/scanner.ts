@@ -14,7 +14,7 @@ class NoneScanner implements AttachmentScanner {
 
 class ClamAvScanner implements AttachmentScanner {
   readonly key = "clamav";
-  async scan(bytes: Buffer, filename: string) {
+  async scan(bytes: Buffer, _filename: string) {
     const env = getEnv();
     if (!env.CLAMAV_HOST) return { status: "SKIPPED" as const, result: "CLAMAV_HOST unset" };
     try {
