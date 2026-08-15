@@ -1,6 +1,7 @@
 import { argon2id } from "@noble/hashes/argon2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { randomBytes } from "node:crypto";
+import { getEnv } from "../../config/env";
 import { prisma } from "../../lib/db";
 import { purgeLegacyInjectedMessages } from "../../server/services/legacy-data-cleanup";
 import { blogCategories, blogPosts } from "./blog-content";
@@ -490,8 +491,9 @@ async function main() {
     });
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || "admin@haven.local";
-  const adminPass = process.env.ADMIN_PASSWORD || "ChangeMe_Admin_123!";
+  // Go through getEnv so a quoted/padded/invalid ADMIN_EMAIL in .env cannot
+  // seed a broken admin account — it validates and falls back to the default.
+  const { ADMIN_EMAIL: adminEmail, ADMIN_PASSWORD: adminPass } = getEnv();
   let admin = await prisma.user.findUnique({ where: { email: adminEmail } });
   if (!admin) {
     admin = await prisma.user.create({
