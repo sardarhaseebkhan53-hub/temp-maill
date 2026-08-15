@@ -1,3 +1,6 @@
+// Must stay first: populates process.env from .env before `lib/db` (imported
+// below) resolves and opens the SQLite file at module-evaluation time.
+import "./env";
 import { argon2id } from "@noble/hashes/argon2.js";
 import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { randomBytes } from "node:crypto";
@@ -27,7 +30,46 @@ async function upsertFlag(key: string, enabled: boolean, description: string) {
   });
 }
 
+/**
+ * Asserts the invariants that guest mailbox creation depends on, using the
+ * same eligibility rule as listAssignableDomains() for the FREE plan.
+ *
+ * A seed that "succeeds" while leaving no FREE-eligible ACTIVE domain produces
+ * a DOMAIN_UNAVAILABLE 500 on the very first page load, which is confusing to
+ * debug. Failing here points at the real problem instead.
+ */
+async function verifyGuestMailboxPrerequisites() {
+  const problems: string[] = [];
+
+  // Guests have no account, so createMailbox() resolves them to the FREE plan.
+  const freeDomains = await prisma.emailDomain.count({
+    where: { status: "ACTIVE", eligibility: "FREE" },
+  });
+  if (freeDomains === 0) {
+    problems.push(
+      "no ACTIVE EmailDomain with eligibility=FREE exists — guest mailbox creation would fail with DOMAIN_UNAVAILABLE",
+    );
+  }
+
+  // persistMailbox() looks this service up by key and cannot proceed without it.
+  const tempEmail = await prisma.service.findUnique({ where: { key: "temp_email" } });
+  if (!tempEmail) problems.push("the 'temp_email' Service row is missing");
+
+  // createMailbox() reads plan limits for the guest's FREE plan.
+  const freePlan = await prisma.plan.findUnique({ where: { key: "FREE" } });
+  if (!freePlan) problems.push("the 'FREE' Plan row is missing");
+
+  if (problems.length) {
+    throw new Error(`Seed verification failed:\n  - ${problems.join("\n  - ")}`);
+  }
+
+  console.log(
+    `Seed verified: ${freeDomains} FREE-eligible active domain(s) available to guests.`,
+  );
+}
+
 async function main() {
+  console.log(`Seeding database: ${process.env.DATABASE_URL || "file:./dev.db"}`);
   await purgeLegacyInjectedMessages();
 
   const permissions = [
@@ -106,6 +148,12 @@ async function main() {
   }
 
   const domains = [
+    // Local development domain. `eligibility: "FREE"` is what makes it visible
+    // to listAssignableDomains() for the FREE plan, which is the plan guests
+    // (no account) resolve to — so a freshly seeded local DB can always mint a
+    // guest mailbox without touching the domain authorization check.
+    { domain: "haven.local", displayName: "Haven Local", status: "ACTIVE", eligibility: "FREE", weight: 75, mxOk: true },
+
     // .test domains (development)
     { domain: "mail.haven.test", displayName: "Haven Mail", status: "ACTIVE", eligibility: "FREE", weight: 70, mxOk: true },
     { domain: "inbox.haven.test", displayName: "Haven Inbox", status: "ACTIVE", eligibility: "FREE", weight: 65, mxOk: true },
@@ -618,6 +666,8 @@ async function main() {
       },
     });
   }
+
+  await verifyGuestMailboxPrerequisites();
 
   console.log("Haven seed complete.");
 }
