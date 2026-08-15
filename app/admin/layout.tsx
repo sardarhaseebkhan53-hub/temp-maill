@@ -9,6 +9,8 @@ const nav: { group: string; items: [string, string][] }[] = [
     group: "Overview",
     items: [
       ["/admin", "Dashboard"],
+      ["/admin/system-health", "System health"],
+      ["/admin/launch-checklist", "Launch checklist"],
       ["/admin/users", "Users"],
       ["/admin/mailboxes", "Mailboxes"],
       ["/admin/inbox-monitor", "Inbox monitor"],
@@ -28,6 +30,7 @@ const nav: { group: string; items: [string, string][] }[] = [
     items: [
       ["/admin/ads", "Ads"],
       ["/admin/ad-analytics", "Ad analytics"],
+      ["/admin/analytics", "Analytics"],
     ],
   },
   {
@@ -66,9 +69,12 @@ const nav: { group: string; items: [string, string][] }[] = [
     group: "System",
     items: [
       ["/admin/settings", "Settings"],
+      ["/admin/limits", "Limits & retention"],
       ["/admin/flags", "Flags"],
       ["/admin/maintenance", "Maintenance"],
       ["/admin/backups", "Backups"],
+      ["/admin/storage", "Storage"],
+      ["/admin/captcha", "CAPTCHA"],
     ],
   },
 ];

@@ -65,6 +65,7 @@ const schema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().optional().default(""),
   GITHUB_CLIENT_ID: z.string().optional().default(""),
   GITHUB_CLIENT_SECRET: z.string().optional().default(""),
+  ANALYTICS_PROVIDER: z.enum(["internal", "plausible", "umami"]).default("internal"),
   CRON_SECRET: z.string().default("local-dev-cron-secret"),
   // Search engine ownership verification. Supplied per deployment; never
   // hardcode a verification token in source.
