@@ -61,6 +61,7 @@ const DATE_FIELDS = new Set([
   "usedAt",
   "readAt",
   "graceUntil",
+  "quarantineUntil",
   "assignedAt",
   "createdAt",
   "updatedAt",
@@ -508,6 +509,60 @@ function orderSql(orderBy: unknown): string {
   return bits.length ? `ORDER BY ${bits.join(", ")}` : "";
 }
 
+/**
+ * Idempotent column migrations for databases that existed before a column
+ * was added. schema.sql only creates *new* tables; these ALTERs bring older
+ * dev/test databases up to date. Production PostgreSQL is migrated from
+ * database/prisma/schema.prisma, the source of truth.
+ */
+const COLUMN_MIGRATIONS: [table: string, column: string, ddl: string][] = [
+  ["SmsNumber", "publicToken", "ALTER TABLE SmsNumber ADD COLUMN publicToken TEXT"],
+  ["SmsNumber", "providerNumberId", "ALTER TABLE SmsNumber ADD COLUMN providerNumberId TEXT"],
+  ["SmsNumber", "assignedAt", "ALTER TABLE SmsNumber ADD COLUMN assignedAt TEXT"],
+  ["SmsNumber", "lastActivityAt", "ALTER TABLE SmsNumber ADD COLUMN lastActivityAt TEXT"],
+  ["SmsNumber", "releasedAt", "ALTER TABLE SmsNumber ADD COLUMN releasedAt TEXT"],
+  ["SmsNumber", "quarantineUntil", "ALTER TABLE SmsNumber ADD COLUMN quarantineUntil TEXT"],
+  ["SmsMessage", "providerMessageId", "ALTER TABLE SmsMessage ADD COLUMN providerMessageId TEXT"],
+  ["SmsMessage", "detectedCode", "ALTER TABLE SmsMessage ADD COLUMN detectedCode TEXT"],
+  ["EmailMessage", "detectedCode", "ALTER TABLE EmailMessage ADD COLUMN detectedCode TEXT"],
+];
+
+function tableColumns(db: DatabaseSync, table: string): string[] {
+  try {
+    return (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name);
+  } catch {
+    return [];
+  }
+}
+
+/** Pre-schema phase: add new columns to pre-existing tables only. */
+function applyColumnMigrations(db: DatabaseSync): void {
+  for (const [table, column, ddl] of COLUMN_MIGRATIONS) {
+    const cols = tableColumns(db, table);
+    if (cols.length === 0) continue; // fresh DBs get the column from schema.sql
+    if (!cols.includes(column)) db.exec(ddl);
+  }
+}
+
+/** Post-schema phase: data migrations + indexes for the new columns. */
+function applyDataMigrations(db: DatabaseSync): void {
+  if (!tableColumns(db, "SmsNumber").length) return;
+  // Status vocabulary migration: legacy ACTIVE/RELEASED rows map onto the
+  // ASSIGNED/QUARANTINED lifecycle.
+  db.exec("UPDATE SmsNumber SET status = 'ASSIGNED', assignedAt = COALESCE(assignedAt, createdAt) WHERE status = 'ACTIVE'");
+  db.exec(
+    "UPDATE SmsNumber SET status = 'QUARANTINED', releasedAt = COALESCE(releasedAt, updatedAt), quarantineUntil = COALESCE(quarantineUntil, updatedAt) WHERE status = 'RELEASED'",
+  );
+  // Unique indexes that accompany the new columns (no-ops when present).
+  for (const ddl of [
+    "CREATE UNIQUE INDEX IF NOT EXISTS SmsNumber_publicToken_idx ON SmsNumber(publicToken)",
+    "CREATE INDEX IF NOT EXISTS SmsNumber_quarantineUntil_idx ON SmsNumber(quarantineUntil)",
+    "CREATE UNIQUE INDEX IF NOT EXISTS SmsMessage_numberId_providerMessageId_idx ON SmsMessage(numberId, providerMessageId)",
+  ]) {
+    db.exec(ddl);
+  }
+}
+
 export class MiniPrisma {
   readonly db: DatabaseSync;
   private delegates: Record<string, ReturnType<MiniPrisma["makeDelegate"]>> = {};
@@ -517,8 +572,10 @@ export class MiniPrisma {
     this.db = new DatabaseSync(file);
     this.db.exec("PRAGMA journal_mode = WAL;");
     this.db.exec("PRAGMA foreign_keys = ON;");
+    applyColumnMigrations(this.db);
     const schemaPath = path.join(process.cwd(), "database/sqlite/schema.sql");
     this.db.exec(readFileSync(schemaPath, "utf8"));
+    applyDataMigrations(this.db);
     for (const m of MODELS) {
       const name = m[0]!.toLowerCase() + m.slice(1);
       this.delegates[name] = this.makeDelegate(m);

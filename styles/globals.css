@@ -226,6 +226,12 @@
    comfortably readable at a constrained measure. */
 .prose-haven {
   @apply max-w-[68ch] text-sm leading-7 text-slate-300;
+  /* Long URLs and unbroken strings must wrap inside small viewports. */
+  overflow-wrap: break-word;
+}
+.prose-haven table {
+  /* Tables in article content scroll their own overflow instead of the page. */
+  @apply my-5 block w-full overflow-x-auto text-xs;
 }
 .prose-haven h2 {
   @apply mb-3 mt-8 font-display text-xl font-bold tracking-tight text-white;

@@ -45,6 +45,8 @@ export function Navbar({ user, locale = "en" }: { user: SessionUser | null; loca
   const [open, setOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const toolsRef = useRef<HTMLDivElement | null>(null);
+  const menuToggleRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
   // Close the mobile drawer on navigation so it never covers the new page.
   useEffect(() => {
@@ -69,6 +71,30 @@ export function Navbar({ user, locale = "en" }: { user: SessionUser | null; loca
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [toolsOpen]);
+
+  // Mobile drawer behaviour: lock page scroll, close on Escape, return focus
+  // to the toggle, and move focus into the drawer when it opens so keyboard
+  // and screen-reader users land inside instead of behind it.
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const firstLink = menuRef.current?.querySelector<HTMLElement>("a, button, select");
+    firstLink?.focus({ preventScroll: true });
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setOpen(false);
+        menuToggleRef.current?.focus({ preventScroll: true });
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
 
   return (
     <header className="no-print sticky top-0 z-50 border-b border-white/[0.08] bg-[#06080d]/85 backdrop-blur-xl">
@@ -173,12 +199,13 @@ export function Navbar({ user, locale = "en" }: { user: SessionUser | null; loca
           )}
 
           <button
+            ref={menuToggleRef}
             type="button"
             onClick={() => setOpen((value) => !value)}
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
-            className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white lg:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white lg:hidden"
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -186,61 +213,74 @@ export function Navbar({ user, locale = "en" }: { user: SessionUser | null; loca
       </div>
 
       {open ? (
-        <div
-          id="mobile-menu"
-          className="max-h-[calc(100vh-4rem)] overflow-y-auto border-t border-white/10 bg-[#070a10]/98 px-4 py-4 backdrop-blur-2xl lg:hidden"
-        >
-          <nav aria-label="Mobile" className="space-y-1">
-            {links.map((link) => (
-              <div key={link.href} className="min-w-0">
-                <Link
-                  href={link.href}
-                  className={cn(
-                    "block rounded-xl px-4 py-3 text-sm font-medium transition-colors",
-                    isActive(path, link.href)
-                      ? "bg-[#00f5a0]/15 font-semibold text-[#00f5a0]"
-                      : "text-slate-300 hover:bg-white/[0.06] hover:text-white",
-                  )}
-                >
-                  {link.label}
-                </Link>
-                {link.children ? (
-                  <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/[0.07] pl-3">
-                    {link.children.slice(1).map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className="block rounded-lg px-3 py-2 text-xs text-slate-400 transition-colors hover:text-white"
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </nav>
+        <>
+          {/* Backdrop: sits under the sticky header (z-50), above page
+              content and any advertisement, and closes the menu on tap. */}
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setOpen(false)}
+            className="fixed inset-0 z-40 cursor-default bg-black/60 backdrop-blur-sm animate-fade-in motion-reduce:animate-none lg:hidden"
+          />
+          <div
+            ref={menuRef}
+            id="mobile-menu"
+            className="relative z-50 max-h-[calc(100dvh-4rem)] overflow-y-auto overscroll-contain border-t border-white/10 bg-[#070a10]/98 px-4 py-4 backdrop-blur-2xl animate-menu-down motion-reduce:animate-none lg:hidden"
+            style={{ paddingBottom: "calc(1rem + env(safe-area-inset-bottom))" }}
+          >
+            <nav aria-label="Mobile" className="space-y-1">
+              {links.map((link) => (
+                <div key={link.href} className="min-w-0">
+                  <Link
+                    href={link.href}
+                    aria-current={isActive(path, link.href) ? "page" : undefined}
+                    className={cn(
+                      "flex min-h-12 items-center rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                      isActive(path, link.href)
+                        ? "bg-[#00f5a0]/15 font-semibold text-[#00f5a0]"
+                        : "text-slate-300 hover:bg-white/[0.06] hover:text-white",
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                  {link.children ? (
+                    <div className="ml-3 mt-0.5 space-y-0.5 border-l border-white/[0.07] pl-3">
+                      {link.children.slice(1).map((child) => (
+                        <Link
+                          key={child.href}
+                          href={child.href}
+                          className="flex min-h-11 items-center rounded-lg px-3 py-2 text-xs text-slate-400 transition-colors hover:text-white"
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </nav>
 
-          <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4">
-            <div className="sm:hidden">
-              <NavLocaleSwitch value={locale} />
-            </div>
-            <Link
-              href={user ? "/dashboard" : "/login"}
-              className="block rounded-xl bg-white/[0.06] px-4 py-3 text-center text-sm font-medium text-slate-200"
-            >
-              {user ? "Go to dashboard" : "Log in"}
-            </Link>
-            {!user ? (
+            <div className="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4">
+              <div className="sm:hidden">
+                <NavLocaleSwitch value={locale} />
+              </div>
               <Link
-                href="/register"
-                className="block rounded-xl bg-[#00f5a0] px-4 py-3 text-center text-sm font-bold text-[#06090e]"
+                href={user ? "/dashboard" : "/login"}
+                className="flex min-h-12 items-center justify-center rounded-xl bg-white/[0.06] px-4 py-3 text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.1]"
               >
-                Create account
+                {user ? "Go to dashboard" : "Log in"}
               </Link>
-            ) : null}
+              {!user ? (
+                <Link
+                  href="/register"
+                  className="flex min-h-12 items-center justify-center rounded-xl bg-[#00f5a0] px-4 py-3 text-sm font-bold text-[#06090e] shadow-[0_0_20px_rgba(0,245,160,0.25)]"
+                >
+                  Create account
+                </Link>
+              ) : null}
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
     </header>
   );
@@ -261,7 +301,7 @@ function ThemeButton() {
       type="button"
       onClick={() => setTheme(dark ? "light" : "dark")}
       aria-label={dark ? "Switch to light theme" : "Switch to dark theme"}
-      className="inline-flex size-9 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white"
+      className="inline-flex size-11 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-white/[0.06] hover:text-white sm:size-9"
     >
       {mounted && !dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
     </button>

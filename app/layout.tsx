@@ -58,6 +58,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // On-screen keyboards shrink the layout viewport instead of overlaying
+  // focused fields, so forms (login, custom address) stay visible while typing.
+  interactiveWidget: "resizes-content",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -67,7 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const dir = isRtl(locale) ? "rtl" : "ltr";
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
-      <body className="font-sans pb-16 lg:pb-0">
+      <body className="font-sans">
         <Providers>{children}</Providers>
       </body>
     </html>

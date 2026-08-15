@@ -59,6 +59,8 @@ export interface PublicMessage {
   hasAttachments: boolean;
   spamFlag: boolean;
   sizeBytes: number;
+  /** Verification code detected in the actual received content, if any. */
+  detectedCode?: string | null;
 }
 
 export interface PublicMessageDetail extends PublicMessage {

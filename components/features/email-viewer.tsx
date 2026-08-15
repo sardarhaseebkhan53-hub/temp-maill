@@ -17,6 +17,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { formatBytes } from "@/lib/utils";
+import { OtpCodeCard } from "@/components/features/otp-code-card";
 import type { PublicMessageDetail } from "@/types";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={() => setStarred((value) => !value)}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-amber-400"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-amber-400"
               title="Star email"
               aria-pressed={starred}
             >
@@ -78,7 +79,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={() => toast.info("Reply is disabled on temporary inboxes")}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
               title="Reply"
             >
               <Reply className="size-4" />
@@ -86,7 +87,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={() => toast.info("Forward is a Pro feature")}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
               title="Forward"
             >
               <Share2 className="size-4" />
@@ -101,7 +102,7 @@ export function EmailViewer({
                   toast.error("Could not copy message text");
                 }
               }}
-              className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+              className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
               title="Copy text"
             >
               <Copy className="size-4" />
@@ -109,7 +110,7 @@ export function EmailViewer({
             <button
               type="button"
               onClick={onDelete}
-              className="rounded-lg p-1.5 transition-colors hover:bg-red-500/20 hover:text-red-400"
+              className="rounded-lg p-2.5 transition-colors hover:bg-red-500/20 hover:text-red-400 lg:p-1.5"
               title="Delete email"
             >
               <Trash2 className="size-4" />
@@ -119,7 +120,7 @@ export function EmailViewer({
               <button
                 type="button"
                 onClick={() => setShowMoreMenu((value) => !value)}
-                className="rounded-lg p-1.5 transition-colors hover:bg-white/[0.08] hover:text-white"
+                className="rounded-lg p-2.5 transition-colors hover:bg-white/[0.08] lg:p-1.5 hover:text-white"
                 title="More actions"
                 aria-expanded={showMoreMenu}
               >
@@ -204,6 +205,12 @@ export function EmailViewer({
         </div>
       </header>
 
+      {message.detectedCode ? (
+        <div className="border-b border-white/[0.05] p-3 sm:px-5">
+          <OtpCodeCard code={message.detectedCode} />
+        </div>
+      ) : null}
+
       {!loadRemote && Boolean(message.htmlSafe) ? (
         <div className="flex flex-col gap-2 border-b border-white/[0.05] bg-slate-900/60 px-4 py-2 text-[11px] text-slate-400 sm:flex-row sm:items-center sm:justify-between">
           <span>Remote images are blocked to prevent tracking.</span>
@@ -263,7 +270,7 @@ export function EmailViewer({
                 {!attachment.blocked ? (
                   <a
                     href={`/api/v1/messages/${message.id}/attachments/${attachment.id}?token=${mailboxToken}`}
-                    className="shrink-0 rounded-lg bg-white/[0.06] p-1.5 transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0]"
+                    className="shrink-0 rounded-lg bg-white/[0.06] p-2.5 transition-colors lg:p-1.5 hover:bg-[#00f5a0]/20 hover:text-[#00f5a0]"
                     download
                     title={`Download ${attachment.filename}`}
                   >

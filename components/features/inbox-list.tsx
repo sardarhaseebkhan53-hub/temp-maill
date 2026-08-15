@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Inbox, MailOpen, Paperclip } from "lucide-react";
+import { Copy, Inbox, KeyRound, MailOpen, Paperclip } from "lucide-react";
 import { cn, relativeTime, truncate } from "@/lib/utils";
 import type { PublicMessage } from "@/types";
 
@@ -75,7 +75,7 @@ export function InboxList({
                 type="button"
                 onClick={() => onFilterChange?.(filter)}
                 className={cn(
-                  "rounded-lg px-2.5 py-1.5 font-medium capitalize transition-colors",
+                  "min-h-10 rounded-lg px-2.5 py-1.5 font-medium capitalize transition-colors sm:min-h-0",
                   activeFilter === filter
                     ? "bg-white/[0.12] font-semibold text-white shadow-sm"
                     : "text-slate-400 hover:text-white",
@@ -183,6 +183,12 @@ export function InboxList({
                       <p className="mt-0.5 truncate text-[11px] text-slate-500">
                         {truncate(message.snippet, 80)}
                       </p>
+                    ) : null}
+                    {message.detectedCode ? (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-[#00f5a0]/25 bg-[#00f5a0]/[0.08] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-widest text-[#00f5a0]">
+                        <KeyRound className="size-2.5" aria-hidden="true" />
+                        {message.detectedCode}
+                      </span>
                     ) : null}
                   </div>
 

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { log } from "@/lib/logger";
 import { getSettingNumber, SettingKeys } from "@/lib/settings";
 import { transitionMailbox } from "@/server/services/mailbox";
+import { sweepSmsNumbers } from "@/server/services/sms";
 import { getStorage } from "@/server/providers/storage";
 
 async function runJob(name: string, fn: () => Promise<unknown>) {
@@ -96,14 +97,7 @@ export async function purgeExpired() {
       await transitionMailbox(b.id, "PURGED", "retention", b.state);
     }
 
-    const expiredSms = await prisma.smsNumber.findMany({
-      where: { status: "ACTIVE", expiresAt: { lte: new Date() } },
-    });
-    for (const n of expiredSms) {
-      await prisma.smsNumber.update({ where: { id: n.id }, data: { status: "EXPIRED" } });
-    }
-
-    return { messages: oldMessages.length, attachments: oldAtt.length, mailboxes: staleBoxes.length, sms: expiredSms.length };
+    return { messages: oldMessages.length, attachments: oldAtt.length, mailboxes: staleBoxes.length };
   });
 }
 
@@ -205,6 +199,9 @@ export async function rollupAnalytics() {
 export async function runAllJobs() {
   const results: Record<string, unknown> = {};
   results.expire = await expireMailboxes().catch((e) => ({ error: String(e) }));
+  results.sms = await runJob("sweep-sms-numbers", () => sweepSmsNumbers()).catch((e) => ({
+    error: String(e),
+  }));
   results.purge = await purgeExpired().catch((e) => ({ error: String(e) }));
   results.subs = await reconcileSubscriptions().catch((e) => ({ error: String(e) }));
   results.hooks = await deliverWebhooks().catch((e) => ({ error: String(e) }));

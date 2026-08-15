@@ -326,7 +326,13 @@ CREATE TABLE IF NOT EXISTS SmsNumber (
   country TEXT NOT NULL,
   userId TEXT,
   guestKey TEXT,
-  status TEXT NOT NULL DEFAULT 'ACTIVE',
+  publicToken TEXT UNIQUE,
+  providerNumberId TEXT,
+  status TEXT NOT NULL DEFAULT 'ASSIGNED',
+  assignedAt TEXT,
+  lastActivityAt TEXT,
+  releasedAt TEXT,
+  quarantineUntil TEXT,
   expiresAt TEXT NOT NULL,
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL
@@ -334,17 +340,21 @@ CREATE TABLE IF NOT EXISTS SmsNumber (
 CREATE INDEX IF NOT EXISTS SmsNumber_status_expiresAt_idx ON SmsNumber(status, expiresAt);
 CREATE INDEX IF NOT EXISTS SmsNumber_country_status_idx ON SmsNumber(country, status);
 CREATE INDEX IF NOT EXISTS SmsNumber_e164_idx ON SmsNumber(e164);
+CREATE INDEX IF NOT EXISTS SmsNumber_quarantineUntil_idx ON SmsNumber(quarantineUntil);
 
 CREATE TABLE IF NOT EXISTS SmsMessage (
   id TEXT PRIMARY KEY,
   numberId TEXT NOT NULL,
   fromNumber TEXT NOT NULL,
   body TEXT NOT NULL,
+  providerMessageId TEXT,
+  detectedCode TEXT,
   receivedAt TEXT NOT NULL,
   read INTEGER NOT NULL DEFAULT 0,
   idempotencyKey TEXT NOT NULL UNIQUE,
   providerMeta TEXT NOT NULL DEFAULT '{}'
 );
+CREATE UNIQUE INDEX IF NOT EXISTS SmsMessage_numberId_providerMessageId_idx ON SmsMessage(numberId, providerMessageId);
 CREATE INDEX IF NOT EXISTS SmsMessage_numberId_receivedAt_idx ON SmsMessage(numberId, receivedAt);
 
 CREATE TABLE IF NOT EXISTS Plan (

@@ -5,8 +5,10 @@ import { RefreshCw, Zap } from "lucide-react";
 import { MailboxCard } from "@/components/features/mailbox-card";
 import { InboxList } from "@/components/features/inbox-list";
 import { EmailViewer } from "@/components/features/email-viewer";
+import { MobileMessageReader } from "@/components/features/mobile-message-reader";
 import { useInboxStream } from "@/hooks/use-inbox-stream";
 import type { PublicMailbox, PublicMessage, PublicMessageDetail } from "@/types";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface DomainOpt {
@@ -223,6 +225,65 @@ export function InboxGenerator({
     }
   }
 
+  // Message actions are shared between the desktop reader pane and the
+  // mobile full-screen reader, so both expose identical behaviour.
+  async function deleteSelectedMessage() {
+    if (!mailbox || !selected) return;
+    await act(`/api/v1/messages/${selected.id}?token=${mailbox.publicToken}`, "DELETE");
+    setMessages((current) => current.filter((message) => message.id !== selected.id));
+    setMailbox((current) =>
+      current
+        ? {
+            ...current,
+            messageCount: Math.max(0, current.messageCount - 1),
+            unreadCount: Math.max(0, current.unreadCount - (selected.read ? 0 : 1)),
+          }
+        : current,
+    );
+    setSelected(null);
+    toast.success("Message deleted");
+  }
+
+  async function markSelectedUnread() {
+    if (!mailbox || !selected || !selected.read) return;
+    await act(`/api/v1/messages/${selected.id}`, "PATCH", {
+      token: mailbox.publicToken,
+      read: false,
+    });
+    setMessages((current) =>
+      current.map((message) =>
+        message.id === selected.id ? { ...message, read: false } : message,
+      ),
+    );
+    setSelected((current) => (current ? { ...current, read: false } : current));
+    setMailbox((current) =>
+      current ? { ...current, unreadCount: current.unreadCount + 1 } : current,
+    );
+    toast.success("Marked as unread");
+  }
+
+  async function reportSelectedMessage() {
+    if (!mailbox || !selected) return;
+    await act("/api/v1/reports", "POST", {
+      mailboxId: mailbox.id,
+      messageId: selected.id,
+      category: "spam",
+      details: "Reported from inbox reader",
+    });
+    toast.success("Report submitted to security queue");
+  }
+
+  async function blockSelectedSender() {
+    if (!mailbox || !selected) return;
+    await act("/api/v1/block", "POST", {
+      token: mailbox.publicToken,
+      mailboxId: mailbox.id,
+      pattern: selected.fromAddress,
+      kind: "ADDRESS",
+    });
+    toast.success("Sender blocked");
+  }
+
   return (
     <div className="min-w-0 space-y-4 sm:space-y-5">
       {mailbox ? (
@@ -271,7 +332,7 @@ export function InboxGenerator({
           type="button"
           onClick={() => mailbox && void loadMessages(mailbox)}
           disabled={!mailbox || messagesLoading}
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white disabled:cursor-wait disabled:opacity-60 sm:w-auto"
+          className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white disabled:cursor-wait disabled:opacity-60 sm:min-h-0 sm:w-auto"
         >
           <RefreshCw className={`size-3.5 ${messagesLoading ? "animate-spin" : ""}`} />
           <span>{messagesLoading ? "Refreshing…" : "Refresh inbox"}</span>
@@ -296,7 +357,14 @@ export function InboxGenerator({
           />
         ) : (
           <div className="grid min-w-0 grid-cols-1 xl:grid-cols-[340px_minmax(0,1fr)]">
-            <div className="min-w-0 border-b border-white/[0.08] bg-[#0b0e16]/80 xl:border-b-0 xl:border-r">
+            <div
+              className={cn(
+                "min-w-0 border-b border-white/[0.08] bg-[#0b0e16]/80 xl:border-b-0 xl:border-r",
+                // On mobile the reader takes over the full screen instead of
+                // living under the list, so hide the list while one is open.
+                selected && "max-xl:hidden",
+              )}
+            >
               <InboxList
                 messages={messages}
                 messageCount={mailbox?.messageCount ?? messages.length}
@@ -311,65 +379,18 @@ export function InboxGenerator({
               />
             </div>
 
-            <div className="min-w-0 bg-[#0a0d14]/70 p-3 sm:p-4">
+            {/* Desktop/tablet-wide reader pane; phones get the full-screen
+                reader below instead of this stacked column. */}
+            <div className="hidden min-w-0 bg-[#0a0d14]/70 p-3 sm:p-4 xl:block">
               {selected ? (
                 <EmailViewer
                   key={selected.id}
                   message={selected}
                   mailboxToken={mailbox?.publicToken || ""}
-                  onDelete={async () => {
-                    if (!mailbox) return;
-                    await act(`/api/v1/messages/${selected.id}?token=${mailbox.publicToken}`, "DELETE");
-                    setMessages((current) => current.filter((message) => message.id !== selected.id));
-                    setMailbox((current) =>
-                      current
-                        ? {
-                            ...current,
-                            messageCount: Math.max(0, current.messageCount - 1),
-                            unreadCount: Math.max(0, current.unreadCount - (selected.read ? 0 : 1)),
-                          }
-                        : current,
-                    );
-                    setSelected(null);
-                    toast.success("Message deleted");
-                  }}
-                  onUnread={async () => {
-                    if (!mailbox || !selected.read) return;
-                    await act(`/api/v1/messages/${selected.id}`, "PATCH", {
-                      token: mailbox.publicToken,
-                      read: false,
-                    });
-                    setMessages((current) =>
-                      current.map((message) =>
-                        message.id === selected.id ? { ...message, read: false } : message,
-                      ),
-                    );
-                    setSelected((current) => (current ? { ...current, read: false } : current));
-                    setMailbox((current) =>
-                      current ? { ...current, unreadCount: current.unreadCount + 1 } : current,
-                    );
-                    toast.success("Marked as unread");
-                  }}
-                  onReport={async () => {
-                    if (!mailbox) return;
-                    await act("/api/v1/reports", "POST", {
-                      mailboxId: mailbox.id,
-                      messageId: selected.id,
-                      category: "spam",
-                      details: "Reported from inbox reader",
-                    });
-                    toast.success("Report submitted to security queue");
-                  }}
-                  onBlock={async () => {
-                    if (!mailbox) return;
-                    await act("/api/v1/block", "POST", {
-                      token: mailbox.publicToken,
-                      mailboxId: mailbox.id,
-                      pattern: selected.fromAddress,
-                      kind: "ADDRESS",
-                    });
-                    toast.success("Sender blocked");
-                  }}
+                  onDelete={() => void deleteSelectedMessage()}
+                  onUnread={() => void markSelectedUnread()}
+                  onReport={() => void reportSelectedMessage()}
+                  onBlock={() => void blockSelectedSender()}
                 />
               ) : (
                 <div className="flex min-h-72 flex-col items-center justify-center p-6 text-center text-slate-400 sm:p-12">
@@ -385,6 +406,21 @@ export function InboxGenerator({
             </div>
           </div>
         )}
+
+        {/* Phones open messages into a dedicated full-screen reader with a
+            real back action instead of squeezing the multi-pane layout. */}
+        {selected ? (
+          <MobileMessageReader
+            key={`mobile-${selected.id}`}
+            message={selected}
+            mailboxToken={mailbox?.publicToken || ""}
+            onBack={() => setSelected(null)}
+            onDelete={() => void deleteSelectedMessage()}
+            onUnread={() => void markSelectedUnread()}
+            onReport={() => void reportSelectedMessage()}
+            onBlock={() => void blockSelectedSender()}
+          />
+        ) : null}
       </section>
 
       <section className="flex min-w-0 flex-col gap-3 rounded-xl border border-white/[0.06] bg-[#0c1017]/60 p-3 text-xs sm:p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -399,13 +435,13 @@ export function InboxGenerator({
             placeholder="custom-name"
             value={customName}
             onChange={(event) => setCustomName(event.target.value)}
-            className="min-w-0 rounded-lg border border-slate-800 bg-[#070a10] px-3 py-2 text-xs text-white placeholder:text-slate-500 focus:border-[#00f5a0] focus:outline-none"
+            className="min-w-0 rounded-lg border border-slate-800 bg-[#070a10] px-3 py-2.5 text-base text-white placeholder:text-slate-500 focus:border-[#00f5a0] focus:outline-none sm:py-2 sm:text-xs"
           />
 
           <select
             value={selectedDomainId}
             onChange={(event) => setSelectedDomainId(event.target.value)}
-            className="min-w-0 rounded-lg border border-slate-800 bg-[#070a10] px-2.5 py-2 text-xs text-slate-200 focus:border-[#00f5a0] focus:outline-none"
+            className="min-w-0 rounded-lg border border-slate-800 bg-[#070a10] px-2.5 py-2.5 text-base text-slate-200 focus:border-[#00f5a0] focus:outline-none sm:py-2 sm:text-xs"
           >
             {domains.map((domain) => (
               <option key={domain.id} value={domain.id}>
@@ -430,7 +466,7 @@ export function InboxGenerator({
                 }
               })
             }
-            className="rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0] disabled:cursor-not-allowed disabled:opacity-40"
+            className="min-h-11 rounded-lg border border-white/10 bg-white/[0.08] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#00f5a0]/20 hover:text-[#00f5a0] disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0"
           >
             {pending ? "Applying…" : "Apply name"}
           </button>

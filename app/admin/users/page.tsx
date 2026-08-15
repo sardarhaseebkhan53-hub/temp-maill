@@ -21,7 +21,7 @@ export default async function AdminUsers({
     <div>
       <h1 className="font-display text-2xl font-semibold mb-4">Users</h1>
       <form className="mb-4">
-        <input name="q" defaultValue={q} placeholder="Search email" className="h-10 rounded-lg border px-3 text-sm bg-card" />
+        <input name="q" defaultValue={q} placeholder="Search email" className="h-10 min-w-0 rounded-lg border px-3 text-base sm:text-sm bg-card" />
       </form>
       <div className="md:hidden space-y-3">
         {users.map((u) => (

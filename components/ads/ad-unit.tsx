@@ -23,6 +23,12 @@ declare global {
  *
  * The unit is pushed exactly once per mount: Haven never re-requests a slot on
  * a timer, so no impression is generated that the visitor did not actually see.
+ *
+ * AdSense units always render as responsive `data-ad-format="auto"`: a fixed
+ * 300px or 728px creative would be cropped (or worse, trigger horizontal
+ * scrolling) inside a 320px-class viewport. The parent container reserves the
+ * slot's intrinsic height, so letting the creative size itself to the actual
+ * container width keeps both CLS protection and a zero-overflow guarantee.
  */
 export function AdUnit({ network, unitId, clientId, responsive, width, height }: AdUnitProps) {
   const pushed = useRef(false);
@@ -51,28 +57,26 @@ export function AdUnit({ network, unitId, clientId, responsive, width, height }:
           crossOrigin="anonymous"
         />
         <ins
-          className="adsbygoogle block"
-          style={
-            responsive
-              ? { display: "block", width: "100%" }
-              : { display: "inline-block", width, height }
-          }
+          className="adsbygoogle mx-auto block max-w-full"
+          style={{ display: "block", width: "100%" }}
           data-ad-client={clientId}
           data-ad-slot={unitId}
-          {...(responsive ? { "data-ad-format": "auto", "data-full-width-responsive": "true" } : {})}
+          data-ad-format="auto"
+          data-full-width-responsive="true"
         />
       </>
     );
   }
 
   // Generic network: the container is provided, the network's own loader
-  // (configured in the admin panel) fills it.
+  // (configured in the admin panel) fills it. Width is capped at the
+  // container so fixed-size third-party tags can never overflow mobile.
   return (
     <div
-      className="haven-ad w-full"
+      className="haven-ad mx-auto w-full max-w-full"
       data-ad-network={network}
       data-ad-slot={unitId}
-      style={responsive ? { width: "100%" } : { width, height }}
+      style={responsive ? undefined : { maxWidth: width, minHeight: height }}
     />
   );
 }

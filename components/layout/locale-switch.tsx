@@ -46,7 +46,7 @@ export function NavLocaleSwitch({ value = "en" }: { value?: string }) {
         value={value}
         onChange={onChange}
         disabled={pending}
-        className="appearance-none rounded-xl border border-transparent bg-transparent py-2 pl-8 pr-6 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.06] focus:border-[#00f5a0]/40 focus:outline-none disabled:opacity-60"
+        className="appearance-none rounded-xl border border-transparent bg-transparent py-2 pl-8 pr-6 text-base sm:text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.06] focus:border-[#00f5a0]/40 focus:outline-none disabled:opacity-60"
       >
         {LOCALES.map((locale: Locale) => (
           <option key={locale} value={locale} className="bg-[#0d121c] text-white">

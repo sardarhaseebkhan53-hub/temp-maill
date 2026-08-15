@@ -29,10 +29,10 @@ export async function AdSlot({ slot, className, resolved }: AdSlotProps) {
       aria-label="Advertisement"
       data-ad-slot={slot}
       className={cn(
-        "not-prose relative isolate mx-auto flex w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-purple-500/25 bg-[#0b0e18]/90",
+        "not-prose relative isolate mx-auto flex w-full min-w-0 max-w-full flex-col overflow-hidden rounded-2xl border border-purple-500/25 bg-[#0b0e18]/90",
         className,
       )}
-      style={{ maxWidth: format.responsive ? format.width : `${format.width}px` }}
+      style={{ maxWidth: `min(100%, ${format.width}px)` }}
     >
       <div className="flex items-center justify-between gap-2 border-b border-white/[0.06] px-2.5 py-1.5">
         <span className="rounded-full border border-purple-500/40 bg-purple-500/15 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-purple-300">
