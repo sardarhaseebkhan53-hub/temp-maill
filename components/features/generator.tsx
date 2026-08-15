@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { RefreshCw, Zap } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, RefreshCw, Send, Settings, Zap } from "lucide-react";
 import { MailboxCard } from "@/components/features/mailbox-card";
 import { InboxList } from "@/components/features/inbox-list";
 import { EmailViewer } from "@/components/features/email-viewer";
@@ -141,8 +142,10 @@ export function InboxGenerator({
       void rememberBox(initialMailbox.id);
       return;
     }
-    void createBox();
-  }, [createBox, initialMailbox, rememberBox]);
+    // An empty list means the operator has not connected a verified domain.
+    // Do not loop a failing create request or imply that a mailbox is loading.
+    if (domains.length > 0) void createBox();
+  }, [createBox, domains.length, initialMailbox, rememberBox]);
 
   const mailboxId = mailbox?.id;
   const mailboxToken = mailbox?.publicToken;
@@ -284,6 +287,68 @@ export function InboxGenerator({
     toast.success("Sender blocked");
   }
 
+  async function sendDevelopmentTest() {
+    if (!mailbox) return;
+    try {
+      await act(`/api/v1/mailboxes/${mailbox.id}/test-message`, "POST", {
+        token: mailbox.publicToken,
+      });
+      await loadMessages(mailbox, false);
+      toast.success("Local test message delivered");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Test delivery failed");
+    }
+  }
+
+  if (!mailbox && domains.length === 0) {
+    return (
+      <section className="overflow-hidden rounded-2xl border border-amber-400/25 bg-[#0c1017]/95 shadow-[0_0_40px_rgba(251,191,36,0.08)]">
+        <div className="border-b border-white/[0.07] bg-amber-400/[0.07] px-5 py-4">
+          <div className="flex items-center gap-2 text-amber-300">
+            <AlertTriangle className="size-4" aria-hidden="true" />
+            <h2 className="text-sm font-bold">Email delivery setup required</h2>
+          </div>
+        </div>
+        <div className="space-y-5 p-5 sm:p-6">
+          <div>
+            <p className="text-sm leading-relaxed text-slate-300">
+              Haven is not publishing an email address because no domain has a verified inbound
+              delivery path. This prevents a realistic-looking but non-working address from being
+              shown to visitors.
+            </p>
+          </div>
+          <ol className="grid gap-3 text-xs text-slate-300 sm:grid-cols-3">
+            {[
+              ["1", "Own a domain", "Add a .com domain controlled by this deployment."],
+              ["2", "Route its MX", "Point DNS to Mailgun, Postmark, or your SMTP receiver."],
+              ["3", "Verify delivery", "Configure the signed webhook and run the MX check."],
+            ].map(([step, title, copy]) => (
+              <li key={step} className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-3">
+                <span className="mb-2 flex size-6 items-center justify-center rounded-full bg-amber-400/15 font-mono text-[10px] font-bold text-amber-300">
+                  {step}
+                </span>
+                <strong className="block text-white">{title}</strong>
+                <span className="mt-1 block leading-relaxed text-slate-400">{copy}</span>
+              </li>
+            ))}
+          </ol>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-[#070a10] px-4 py-3">
+            <p className="text-[11px] text-slate-400">
+              Operator: configure <code className="text-slate-200">EMAIL_DOMAINS</code> and the inbound provider, then seed and verify.
+            </p>
+            <Link
+              href="/admin/domains"
+              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.06] px-3 text-xs font-semibold text-white transition-colors hover:bg-white/[0.1]"
+            >
+              <Settings className="size-3.5" aria-hidden="true" />
+              Domain settings
+            </Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <div className="min-w-0 space-y-4 sm:space-y-5">
       {mailbox ? (
@@ -328,15 +393,27 @@ export function InboxGenerator({
           </span>
         </div>
 
-        <button
-          type="button"
-          onClick={() => mailbox && void loadMessages(mailbox)}
-          disabled={!mailbox || messagesLoading}
-          className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white disabled:cursor-wait disabled:opacity-60 sm:min-h-0 sm:w-auto"
-        >
-          <RefreshCw className={`size-3.5 ${messagesLoading ? "animate-spin" : ""}`} />
-          <span>{messagesLoading ? "Refreshing…" : "Refresh inbox"}</span>
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+          {mailbox?.deliveryStatus === "DEVELOPMENT" ? (
+            <button
+              type="button"
+              onClick={() => void sendDevelopmentTest()}
+              className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-amber-400/25 bg-amber-400/[0.08] px-3.5 py-2 text-xs font-semibold text-amber-200 transition-colors hover:bg-amber-400/[0.14] sm:min-h-0"
+            >
+              <Send className="size-3.5" />
+              Send local test
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => mailbox && void loadMessages(mailbox)}
+            disabled={!mailbox || messagesLoading}
+            className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.05] px-3.5 py-2 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.1] hover:text-white disabled:cursor-wait disabled:opacity-60 sm:min-h-0"
+          >
+            <RefreshCw className={`size-3.5 ${messagesLoading ? "animate-spin" : ""}`} />
+            <span>{messagesLoading ? "Refreshing…" : "Refresh inbox"}</span>
+          </button>
+        </div>
       </div>
 
       <section

@@ -2,7 +2,18 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Check, Clock, Copy, Plus, QrCode, RefreshCw, Share2, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Plus,
+  QrCode,
+  RefreshCw,
+  Share2,
+  Trash2,
+} from "lucide-react";
 import { useClipboard } from "@/hooks/use-clipboard";
 import { Dialog } from "@/components/ui/dialog";
 import type { PublicMailbox } from "@/types";
@@ -30,22 +41,32 @@ export function MailboxCard({
   const { copied, copy } = useClipboard();
   const [qr, setQr] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [now, setNow] = useState(() => Date.now());
+  // The server and hydrating browser must render the same first frame. Reading
+  // Date.now() in the initializer made the countdown drift by one second and
+  // caused React to discard this subtree during hydration.
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
 
   const defaultDurationMs = 10 * 60 * 1000;
-  const remaining = Math.max(0, new Date(mailbox.expiresAt).getTime() - now);
-  const totalSeconds = Math.floor(remaining / 1000);
+  const remaining = now === null ? null : Math.max(0, new Date(mailbox.expiresAt).getTime() - now);
+  const totalSeconds = Math.floor((remaining ?? 0) / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  const timeFormatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  const timeFormatted = now === null
+    ? "--:--"
+    : `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
   const totalSegments = 8;
-  const fraction = Math.min(1, Math.max(0, remaining / defaultDurationMs));
-  const activeSegments = remaining <= 0 ? 0 : Math.max(1, Math.ceil(fraction * totalSegments));
+  const fraction = Math.min(1, Math.max(0, (remaining ?? defaultDurationMs) / defaultDurationMs));
+  const activeSegments = remaining === null
+    ? totalSegments
+    : remaining <= 0
+      ? 0
+      : Math.max(1, Math.ceil(fraction * totalSegments));
 
   async function loadQr() {
     try {
@@ -96,7 +117,10 @@ export function MailboxCard({
   return (
     <div
       className={cn(
-        "relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-[#00f5a0]/35 bg-[#0c1017]/95 p-4 shadow-[0_0_40px_rgba(0,245,160,0.12)] backdrop-blur-2xl sm:p-5",
+        "relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border bg-[#0c1017]/95 p-4 backdrop-blur-2xl sm:p-5",
+        mailbox.deliveryReady
+          ? "border-[#00f5a0]/35 shadow-[0_0_40px_rgba(0,245,160,0.12)]"
+          : "border-amber-400/25 shadow-[0_0_40px_rgba(251,191,36,0.08)]",
         className,
       )}
     >
@@ -104,7 +128,14 @@ export function MailboxCard({
 
       <div className="relative mb-3.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="size-2 shrink-0 rounded-full bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.9)]" />
+          <span
+            className={cn(
+              "size-2 shrink-0 rounded-full",
+              mailbox.deliveryReady
+                ? "bg-[#00f5a0] shadow-[0_0_8px_rgba(0,245,160,0.9)]"
+                : "bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.65)]",
+            )}
+          />
           <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-slate-300 sm:text-xs">
             Your temporary email
           </span>
@@ -122,13 +153,15 @@ export function MailboxCard({
                 live ? "animate-pulse bg-[#00f5a0] motion-reduce:animate-none" : "bg-amber-400",
               )}
             />
-            {live ? "Live" : "Polling"}
+            {live ? "Live updates" : "Polling"}
           </span>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#00f5a0]/20 bg-[#00f5a0]/10 px-2.5 py-1 font-mono text-xs font-medium text-[#00f5a0]">
           <Clock className="size-3.5" />
-          <span>{remaining > 0 ? `Expires in ${timeFormatted}` : "Expired"}</span>
+          <span>
+            {remaining === null ? "Expires in --:--" : remaining > 0 ? `Expires in ${timeFormatted}` : "Expired"}
+          </span>
         </div>
       </div>
 
@@ -153,9 +186,27 @@ export function MailboxCard({
         </button>
       </div>
 
-      <p className="mt-2 text-[11px] font-medium text-slate-400">
-        Your address is ready to receive email.
-      </p>
+      <div
+        className={cn(
+          "mt-2.5 flex items-start gap-2 rounded-lg border px-3 py-2 text-[11px] leading-relaxed",
+          mailbox.deliveryReady
+            ? "border-[#00f5a0]/15 bg-[#00f5a0]/[0.06] text-slate-300"
+            : "border-amber-400/20 bg-amber-400/[0.07] text-amber-100/80",
+        )}
+      >
+        {mailbox.deliveryReady ? (
+          <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-[#00f5a0]" />
+        ) : (
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-amber-400" />
+        )}
+        <span>
+          {mailbox.deliveryReady
+            ? `Internet mail delivery is ready through ${mailbox.deliveryProvider}.`
+            : mailbox.deliveryStatus === "DEVELOPMENT"
+              ? "Development test inbox — messages from the public internet will not arrive."
+              : mailbox.deliveryDetail}
+        </span>
+      </div>
 
       <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <button

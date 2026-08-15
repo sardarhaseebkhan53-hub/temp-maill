@@ -17,7 +17,6 @@ import { getSmsProvider } from "@/server/providers/sms";
  */
 /** The test DB persists between runs — quarantined leftovers would otherwise shrink the mock pool. */
 async function purgeTestAssignments() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows: any[] = await prisma.smsNumber.findMany({
     where: { guestKey: { contains: "sms-test-" } },
     select: { id: true, serviceInstanceId: true },

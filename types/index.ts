@@ -45,6 +45,11 @@ export interface PublicMailbox {
   messageCount: number;
   unreadCount: number;
   favorite?: boolean;
+  /** True only when both the inbound provider and this domain's MX path are ready. */
+  deliveryReady?: boolean;
+  deliveryStatus?: "READY" | "DEVELOPMENT" | "MISCONFIGURED";
+  deliveryProvider?: string;
+  deliveryDetail?: string;
 }
 
 export interface PublicMessage {
