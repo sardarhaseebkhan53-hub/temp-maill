@@ -36,6 +36,7 @@ const nav: { group: string; items: [string, string][] }[] = [
       ["/admin/domains", "Domains"],
       ["/admin/email-providers", "Email providers"],
       ["/admin/sms-providers", "SMS providers"],
+      ["/admin/webhooks", "Webhooks"],
       ["/admin/api", "API"],
     ],
   },

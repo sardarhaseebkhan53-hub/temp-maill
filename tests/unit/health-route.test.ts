@@ -4,11 +4,19 @@ const mocks = vi.hoisted(() => ({
   pingDb: vi.fn(),
   pingCache: vi.fn(),
   findMany: vi.fn(),
+  webhookCount: vi.fn(),
+  systemSettingFindUnique: vi.fn(),
+  securityEventCount: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
   pingDb: mocks.pingDb,
-  prisma: { emailDomain: { findMany: mocks.findMany } },
+  prisma: {
+    emailDomain: { findMany: mocks.findMany },
+    webhookDelivery: { count: mocks.webhookCount },
+    systemSetting: { findUnique: mocks.systemSettingFindUnique },
+    securityEvent: { count: mocks.securityEventCount },
+  },
 }));
 vi.mock("@/lib/redis", () => ({ pingCache: mocks.pingCache }));
 vi.mock("@/server/providers/email", () => ({
@@ -19,6 +27,9 @@ vi.mock("@/server/providers/email", () => ({
 }));
 vi.mock("@/server/providers/sms", () => ({
   getSmsProvider: () => ({ health: async () => ({ ok: true, detail: "test" }) }),
+}));
+vi.mock("@/server/providers/storage", () => ({
+  getStorage: () => ({ key: "local" }),
 }));
 vi.mock("@/server/services/email-delivery", () => ({
   inboundProviderReadiness: () => ({
@@ -37,6 +48,9 @@ describe("health route failure handling", () => {
     mocks.pingDb.mockReset();
     mocks.pingCache.mockReset();
     mocks.findMany.mockReset();
+    mocks.webhookCount.mockReset().mockResolvedValue(0);
+    mocks.systemSettingFindUnique.mockReset().mockResolvedValue(null);
+    mocks.securityEventCount.mockReset().mockResolvedValue(0);
     mocks.pingCache.mockResolvedValue({ ok: true, latencyMs: 1 });
   });
 
