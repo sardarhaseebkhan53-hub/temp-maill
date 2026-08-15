@@ -4,7 +4,7 @@
   "private": true,
   "description": "Haven — temporary email and privacy services platform",
   "scripts": {
-    "dev": "tsx database/seed/index.ts && next dev -H 0.0.0.0 -p 3000",
+    "dev": "next dev -H 0.0.0.0 -p 3000",
     "dev:next": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start -H 0.0.0.0 -p 3000",
@@ -13,7 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:seed": "tsx database/seed/index.ts",
-    "db:generate": "echo 'Using built-in SQLite adapter; Prisma schema is the source of truth for production Postgres.'",
+    "db:generate": "prisma generate --schema=database/prisma/schema.prisma",
     "postinstall": "echo 'Haven ready'"
   },
   "prisma": {

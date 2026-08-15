@@ -27,6 +27,7 @@ We do **not** claim the product is anonymous or untraceable.
 ```bash
 cp .env.example .env
 npm install
+npm run db:seed
 npm run dev
 ```
 
@@ -41,7 +42,8 @@ Seeded operator (change immediately):
 
 | Script | Purpose |
 | --- | --- |
-| `npm run dev` | Seed if needed and start Next.js on `0.0.0.0:3000` |
+| `npm run dev` | Start Next.js on `0.0.0.0:3000` |
+| `npm run db:seed` | Seed the database (run once, or after schema changes) |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run test` | Vitest (unit, integration, security) |
