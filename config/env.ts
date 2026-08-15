@@ -70,17 +70,119 @@ const schema = z.object({
 
 export type AppEnv = z.infer<typeof schema>;
 
-let cached: AppEnv | null = null;
+/**
+ * Variables that must be explicitly configured in production. Everything else
+ * may quietly fall back to the schema default.
+ */
+const PRODUCTION_REQUIRED: ReadonlyArray<keyof AppEnv> = [
+  "APP_URL",
+  "DATABASE_URL",
+  "AUTH_SECRET",
+  "ADMIN_EMAIL",
+  "CRON_SECRET",
+];
 
+/**
+ * `.env` files are hand-edited, so values routinely arrive with stray quotes,
+ * trailing whitespace (very common when copy/pasting on Windows) or as an
+ * empty assignment such as `ADMIN_EMAIL=`. Zod `.default()` only kicks in for
+ * `undefined`, so an empty or padded value used to blow up the whole render
+ * with "Invalid environment: ADMIN_EMAIL: Invalid email". Normalise first and
+ * treat blank values as "not set".
+ */
+function normalizeRawEnv(source: NodeJS.ProcessEnv): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, rawValue] of Object.entries(source)) {
+    if (typeof rawValue !== "string") continue;
+    let value = rawValue.trim();
+    // Strip a single pair of matching surrounding quotes: DATABASE_URL="file:./dev.db"
+    if (value.length >= 2) {
+      const first = value[0];
+      const last = value[value.length - 1];
+      if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+        value = value.slice(1, -1).trim();
+      }
+    }
+    if (value === "") continue; // let the schema default apply
+    out[key] = value;
+  }
+  return out;
+}
+
+function formatIssues(error: z.ZodError): string {
+  return error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+}
+
+let cached: AppEnv | null = null;
+let warned = false;
+
+/**
+ * Parse and cache the process environment.
+ *
+ * Behaviour on invalid values:
+ *  - production: throw, listing every offending variable (fail fast on deploy).
+ *  - development/test: log one warning naming the bad variables, drop them and
+ *    fall back to the schema defaults so `next dev` still boots. A malformed
+ *    optional credential should never turn the home page into a 500.
+ */
 export function getEnv(): AppEnv {
   if (cached) return cached;
-  const parsed = schema.safeParse(process.env);
-  if (!parsed.success) {
-    const issues = parsed.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
-    throw new Error(`Invalid environment: ${issues}`);
+
+  const raw = normalizeRawEnv(process.env);
+  const parsed = schema.safeParse(raw);
+  if (parsed.success) {
+    cached = parsed.data;
+    return cached;
   }
-  cached = parsed.data;
+
+  const isProd = raw.NODE_ENV === "production";
+  const issues = formatIssues(parsed.error);
+
+  if (isProd) {
+    throw new Error(
+      `Invalid environment: ${issues}. Fix these variables in your deployment configuration (see .env.example).`,
+    );
+  }
+
+  // Drop the offending keys and re-parse so defaults take over.
+  const invalidKeys = new Set(
+    parsed.error.issues.map((i) => String(i.path[0])).filter((k) => k && k !== "undefined"),
+  );
+  const fallbackInput: Record<string, string> = { ...raw };
+  for (const key of invalidKeys) delete fallbackInput[key];
+
+  const fallback = schema.safeParse(fallbackInput);
+  if (!fallback.success) {
+    // Should not happen — every field has a default — but keep the original
+    // hard failure rather than returning a half-built config.
+    throw new Error(`Invalid environment: ${formatIssues(fallback.error)}`);
+  }
+
+  if (!warned) {
+    warned = true;
+    console.warn(
+      `[env] Ignoring invalid environment variable(s) and using defaults instead: ${issues}. ` +
+        `Update your .env file (see .env.example) — these values are rejected in production.`,
+    );
+  }
+
+  cached = fallback.data;
   return cached;
+}
+
+/** Clear the memoised config. Intended for tests. */
+export function resetEnvCache(): void {
+  cached = null;
+  warned = false;
+}
+
+/**
+ * Variables that are missing or still using a built-in default. Useful for a
+ * deployment readiness check; empty array means production-ready.
+ */
+export function missingProductionEnv(): string[] {
+  const raw = normalizeRawEnv(process.env);
+  return PRODUCTION_REQUIRED.filter((key) => !raw[key]).map(String);
 }
 
 export function isProduction(): boolean {

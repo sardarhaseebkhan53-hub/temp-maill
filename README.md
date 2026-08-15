@@ -38,6 +38,23 @@ Seeded operator (change immediately):
 - Email: `ADMIN_EMAIL` (default `admin@haven.local`)
 - Password: `ADMIN_PASSWORD` (default `ChangeMe_Admin_123!`)
 
+### Environment troubleshooting
+
+`config/env.ts` validates `process.env` on first use. Values are trimmed and a
+single pair of wrapping quotes is stripped, and a blank assignment (`ADMIN_EMAIL=`)
+counts as unset, so the schema default applies.
+
+If a value is still invalid the behaviour depends on `NODE_ENV`:
+
+- **development / test** — the bad variable is ignored, the default is used and a
+  single `[env] Ignoring invalid environment variable(s) …` warning is logged.
+  A malformed optional value will not take the site down while you are working.
+- **production** — startup throws and lists every offending variable, so a bad
+  deploy fails fast instead of serving broken pages.
+
+So if you see `Invalid environment: ADMIN_EMAIL: Invalid email`, check that line
+in your `.env`: it is usually a stray space, a smart quote, or a missing domain.
+
 ## Scripts
 
 | Script | Purpose |
