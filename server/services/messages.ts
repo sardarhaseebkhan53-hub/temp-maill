@@ -17,6 +17,7 @@ export function toPublicMessage(m: any): PublicMessage {
     hasAttachments: m.hasAttachments,
     spamFlag: m.spamFlag,
     sizeBytes: m.sizeBytes,
+    detectedCode: m.detectedCode ?? null,
   };
 }
 

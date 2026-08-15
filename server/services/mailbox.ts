@@ -3,6 +3,7 @@ import { Errors } from "@/lib/errors";
 import { randomToken, sha256Hex } from "@/lib/crypto";
 import { randomLocalPart, validateLocalPart } from "@/lib/username";
 import { getSettingNumber, SettingKeys } from "@/lib/settings";
+import { getEnv } from "@/config/env";
 import { nowPlusMinutes } from "@/lib/utils";
 import { getPlanLimits, limitBool, limitNumber } from "@/server/services/plans";
 import type { MailboxState, PlanKey, PublicMailbox, SessionUser } from "@/types";
@@ -90,7 +91,8 @@ export async function createMailbox(opts: {
   const limits = await getPlanLimits(planKey);
   const defaultTtl = await getSettingNumber(
     planKey === "FREE" ? SettingKeys.mailboxDefaultTtl : SettingKeys.mailboxPremiumTtl,
-    planKey === "FREE" ? 10 : 24 * 60,
+    // DB admin settings win; the environment variable is the next fallback.
+    planKey === "FREE" ? getEnv().MAILBOX_TTL_MINUTES : 24 * 60,
   );
   const ttl = opts.ttlMinutes ?? defaultTtl;
   const maxActive = limitNumber(limits, "max_active_mailboxes", planKey === "FREE" ? 3 : 25);

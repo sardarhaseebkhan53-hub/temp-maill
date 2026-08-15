@@ -3,6 +3,7 @@ import { cache, mailboxChannel } from "@/lib/redis";
 import { Errors } from "@/lib/errors";
 import { log } from "@/lib/logger";
 import { classifyAttachment, extractSnippet, htmlToText, sanitizeEmailHtml } from "@/lib/sanitize";
+import { detectOtpInEmail } from "@/lib/otp";
 import { getSettingNumber, SettingKeys } from "@/lib/settings";
 import { attachmentKey, checksumBuffer, getStorage } from "@/server/providers/storage";
 import { getScanner } from "@/server/providers/scanner";
@@ -54,6 +55,8 @@ export async function ingestInbound(mail: InboundEmail): Promise<{ stored: numbe
     const htmlSafe = sanitizeEmailHtml(mail.htmlBody || "");
     const text = mail.textBody || htmlToText(mail.htmlBody || "");
     const snippet = extractSnippet(text);
+    // Detection only labels what actually arrived; Haven never generates codes.
+    const detectedCode = detectOtpInEmail(text, htmlSafe);
     const spamScore = scoreSpam(mail, text);
     const retention = await getSettingNumber(SettingKeys.messageRetentionFree, 60 * 24);
     const idempotencyKey = `${mail.idempotencyKey}:${box.id}`;
@@ -81,6 +84,7 @@ export async function ingestInbound(mail: InboundEmail): Promise<{ stored: numbe
         spamScore,
         spamFlag: spamScore >= 5,
         hasAttachments: mail.attachments.length > 0,
+        detectedCode,
         receivedAt: mail.receivedAt,
       },
     });

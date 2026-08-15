@@ -15,9 +15,10 @@ const registry: Record<string, InboundEmailProvider> = {
 export function getInboundProvider(key?: string): InboundEmailProvider {
   const env = getEnv();
   const requested = (key || env.EMAIL_INBOUND_PROVIDER).toLowerCase();
-  if (requested === "mock" && !allowMockProviders()) {
-    return registry.smtp!;
-  }
+  // Explicit keys always resolve to exactly that adapter — a webhook signed
+  // for one carrier is never verified by another. In production the mock
+  // refuses verify/parse on its own, so an EMAIL_INBOUND_PROVIDER=mock
+  // misconfiguration fails closed instead of silently substituting SMTP.
   return registry[requested] ?? registry.mock!;
 }
 

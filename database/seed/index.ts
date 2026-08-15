@@ -152,6 +152,11 @@ async function main() {
     create: { key: "twilio", name: "Twilio", adapter: "twilio", enabled: false },
   });
   await prisma.smsProvider.upsert({
+    where: { key: "telnyx" },
+    update: {},
+    create: { key: "telnyx", name: "Telnyx", adapter: "telnyx", enabled: false },
+  });
+  await prisma.smsProvider.upsert({
     where: { key: "vonage" },
     update: {},
     create: { key: "vonage", name: "Vonage", adapter: "vonage", enabled: false },
@@ -311,7 +316,10 @@ async function main() {
     ["message.retention_minutes_free", "1440", "privacy", "number"],
     ["message.retention_minutes_premium", "10080", "privacy", "number"],
     ["attachment.retention_minutes", "1440", "privacy", "number"],
-    ["sms.default_ttl_minutes", "20", "sms", "number"],
+    ["sms.default_ttl_minutes", "10", "sms", "number"],
+    // A released number is never re-assigned until this quarantine elapses,
+    // so a new visitor can never receive the previous renter's SMS.
+    ["sms.quarantine_minutes", "1440", "sms", "number"],
     ["maintenance.enabled", "false", "system", "bool"],
     ["feature.registration", "true", "system", "bool"],
     ["i18n.default_locale", "en", "i18n", "string"],

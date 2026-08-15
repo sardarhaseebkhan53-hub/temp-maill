@@ -1,9 +1,9 @@
+import QRCode from "qrcode";
 import { ok, fail } from "@/lib/http";
-import { assertSmsNumberAccess, getSmsNumber, releaseNumber } from "@/server/services/sms";
+import { assertSmsNumberAccess, getSmsNumber } from "@/server/services/sms";
 import { requestContext, mailboxAuthToken } from "@/server/api/context";
 
-/** Expire the assignment immediately and quarantine the number. */
-export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
     const auth = await requestContext(req);
@@ -11,8 +11,12 @@ export async function DELETE(req: Request, ctx: { params: Promise<{ id: string }
     const number = await getSmsNumber(id);
     assertSmsNumberAccess(number, { userId: auth.user?.id, token });
 
-    const released = await releaseNumber(id);
-    return ok({ released: true, status: released.status });
+    const dataUrl = await QRCode.toDataURL(`sms:${number.e164}`, {
+      margin: 4,
+      width: 320,
+      errorCorrectionLevel: "M",
+    });
+    return ok({ dataUrl });
   } catch (e) {
     return fail(e, req);
   }

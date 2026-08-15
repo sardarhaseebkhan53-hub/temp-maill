@@ -141,12 +141,28 @@ const NOUNS = [
   "drift",
 ];
 
+/**
+ * Cryptographically secure uniform pick in [0, max) for any positive max —
+ * 32-bit rejection sampling, no modulo bias. (A single byte only works for
+ * max ≤ 256; usernames draw from larger ranges such as the 3-digit suffix.)
+ */
+function secureIndex(max: number): number {
+  if (!Number.isInteger(max) || max <= 0) throw new RangeError("secureIndex: max must be a positive integer");
+  const RANGE = 0x100000000; // 2^32
+  const limit = Math.floor(RANGE / max) * max;
+  const buf = new Uint32Array(1);
+  for (;;) {
+    crypto.getRandomValues(buf);
+    if (buf[0]! < limit) return buf[0]! % max;
+  }
+}
+
 function pick<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)] as T;
+  return arr[secureIndex(arr.length)] as T;
 }
 
 export function randomLocalPart(): string {
-  const n = Math.floor(100 + Math.random() * 900);
+  const n = 100 + secureIndex(900);
   return `${pick(ADJECTIVES)}${pick(NOUNS)}${n}`.toLowerCase();
 }
 

@@ -322,6 +322,8 @@ model EmailMessage {
   read            Boolean           @default(false)
   starred         Boolean           @default(false)
   hasAttachments  Boolean           @default(false)
+  // Verification code detected in the received content (never invented).
+  detectedCode    String?
   receivedAt      DateTime          @default(now())
   deletedAt       DateTime?
   purgedAt        DateTime?
@@ -432,7 +434,15 @@ model SmsNumber {
   country           String
   userId            String?
   guestKey          String?
-  status            String           @default("ACTIVE") // ACTIVE | RELEASED | EXPIRED
+  // Bearer token required (with owner session as an alternative) for every
+  // read/write against this assignment; prevents IDOR enumeration.
+  publicToken       String           @unique
+  providerNumberId  String?
+  status            String           @default("ASSIGNED") // AVAILABLE | ASSIGNED | EXPIRED | BLOCKED | RELEASING | QUARANTINED
+  assignedAt        DateTime?
+  lastActivityAt    DateTime?
+  releasedAt        DateTime?
+  quarantineUntil   DateTime?
   expiresAt         DateTime
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
@@ -443,20 +453,25 @@ model SmsNumber {
   @@index([status, expiresAt])
   @@index([country, status])
   @@index([e164])
+  @@index([quarantineUntil])
 }
 
 model SmsMessage {
-  id             String     @id @default(cuid())
-  numberId       String
-  fromNumber     String
-  body           String
-  receivedAt     DateTime   @default(now())
-  read           Boolean    @default(false)
-  idempotencyKey String     @unique
-  providerMeta   String     @default("{}")
-  number         SmsNumber  @relation(fields: [numberId], references: [id], onDelete: Cascade)
+  id                String     @id @default(cuid())
+  numberId          String
+  fromNumber        String
+  body              String
+  providerMessageId String?
+  // Verification code detected in the actual SMS body (never invented).
+  detectedCode      String?
+  receivedAt        DateTime   @default(now())
+  read              Boolean    @default(false)
+  idempotencyKey    String     @unique
+  providerMeta      String     @default("{}")
+  number            SmsNumber  @relation(fields: [numberId], references: [id], onDelete: Cascade)
 
   @@index([numberId, receivedAt])
+  @@unique([numberId, providerMessageId])
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
