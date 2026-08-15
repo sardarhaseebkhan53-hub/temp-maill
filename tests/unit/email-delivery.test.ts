@@ -64,6 +64,21 @@ describe("email delivery readiness", () => {
     });
   });
 
+  it("rejects obvious placeholder values for the signing key", () => {
+    process.env.EMAIL_INBOUND_PROVIDER = "mailgun";
+    process.env.MAILGUN_WEBHOOK_SIGNING_KEY = "REPLACE_WITH_MAILGUN_WEBHOOK_SIGNING_KEY";
+    resetEnvCache();
+    expect(inboundProviderReadiness()).toMatchObject({
+      status: "MISCONFIGURED",
+      ready: false,
+    });
+    // An obviously placeholder domain is also rejected for the same reason.
+    process.env.MAILGUN_WEBHOOK_SIGNING_KEY = "abcdef-real-looking-32-byte-signing-key-1234";
+    process.env.MAILGUN_DOMAIN = "your-domain.com";
+    resetEnvCache();
+    expect(inboundProviderReadiness().ready).toBe(true);
+  });
+
   it("normalizes and validates operator-entered domains", () => {
     expect(normalizeEmailDomain(" @Mail.Example.COM. ")).toBe("mail.example.com");
     expect(isValidEmailDomain("mail.example.com")).toBe(true);

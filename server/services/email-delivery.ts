@@ -1,6 +1,7 @@
 import { resolveMx } from "node:dns/promises";
 import { getEnv } from "@/config/env";
 import { prisma } from "@/lib/db";
+import { isMeaningfulSecret } from "@/lib/secrets";
 
 export type MailDeliveryStatus = "READY" | "DEVELOPMENT" | "MISCONFIGURED";
 
@@ -119,7 +120,7 @@ export function inboundProviderReadiness(): MailDeliveryReadiness {
             detail: "Development test mode; public internet email is not connected.",
           };
     case "mailgun": {
-      const ready = Boolean(env.MAILGUN_WEBHOOK_SIGNING_KEY);
+      const ready = isMeaningfulSecret(env.MAILGUN_WEBHOOK_SIGNING_KEY);
       return {
         status: ready ? "READY" : "MISCONFIGURED",
         ready,

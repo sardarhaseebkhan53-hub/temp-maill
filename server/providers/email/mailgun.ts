@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { getEnv } from "@/config/env";
+import { isMeaningfulSecret } from "@/lib/secrets";
 import type {
   InboundAttachment,
   InboundEmail,
@@ -123,7 +124,7 @@ export class MailgunInboundProvider implements InboundEmailProvider {
 
   async health() {
     const env = getEnv();
-    const configured = Boolean(env.MAILGUN_WEBHOOK_SIGNING_KEY);
+    const configured = isMeaningfulSecret(env.MAILGUN_WEBHOOK_SIGNING_KEY);
     return {
       ok: configured,
       detail: configured
