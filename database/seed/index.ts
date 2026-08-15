@@ -3,6 +3,7 @@ import { bytesToHex, utf8ToBytes } from "@noble/hashes/utils.js";
 import { randomBytes } from "node:crypto";
 import { getEnv } from "../../config/env";
 import { prisma } from "../../lib/db";
+import { isMeaningfulSecret } from "../../lib/secrets";
 import { purgeLegacyInjectedMessages } from "../../server/services/legacy-data-cleanup";
 import {
   isValidEmailDomain,
@@ -224,10 +225,10 @@ async function main() {
       provider.key === "mock"
         ? developmentMode
         : provider.key === "mailgun"
-          ? Boolean(emailEnv.MAILGUN_WEBHOOK_SIGNING_KEY)
+          ? isMeaningfulSecret(emailEnv.MAILGUN_WEBHOOK_SIGNING_KEY)
           : provider.key === "postmark"
-            ? Boolean(emailEnv.POSTMARK_WEBHOOK_USER && emailEnv.POSTMARK_WEBHOOK_PASS)
-            : Boolean(emailEnv.EMAIL_EXPECTED_MX);
+            ? Boolean(isMeaningfulSecret(emailEnv.POSTMARK_WEBHOOK_USER) && isMeaningfulSecret(emailEnv.POSTMARK_WEBHOOK_PASS))
+            : isMeaningfulSecret(emailEnv.EMAIL_EXPECTED_MX);
     await prisma.emailProvider.upsert({
       where: { key: provider.key },
       update: {
