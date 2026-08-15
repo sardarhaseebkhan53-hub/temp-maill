@@ -1,4 +1,7 @@
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
+
+const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
@@ -30,8 +33,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
-  // Fix workspace root warning when user has package-lock.json in parent folder
-  outputFileTracingRoot: __dirname,
+  // Fix the workspace-root warning when a parent directory has a lockfile.
+  // next.config.ts is loaded as an ES module, where __dirname is unavailable.
+  outputFileTracingRoot: projectRoot,
   serverExternalPackages: ["@noble/hashes"],
   experimental: {
     serverActions: {
