@@ -30,6 +30,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   compress: true,
+  // Fix workspace root warning when user has package-lock.json in parent folder
+  outputFileTracingRoot: __dirname,
   serverExternalPackages: ["@noble/hashes"],
   experimental: {
     serverActions: {

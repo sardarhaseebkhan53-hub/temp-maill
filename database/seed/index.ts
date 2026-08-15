@@ -106,9 +106,20 @@ async function main() {
   }
 
   const domains = [
-    { domain: "mail.haven.test", displayName: "Haven Mail", status: "ACTIVE", eligibility: "FREE", weight: 100, mxOk: true },
-    { domain: "inbox.haven.test", displayName: "Haven Inbox", status: "ACTIVE", eligibility: "FREE", weight: 80, mxOk: true },
+    // .test domains (development)
+    { domain: "mail.haven.test", displayName: "Haven Mail", status: "ACTIVE", eligibility: "FREE", weight: 70, mxOk: true },
+    { domain: "inbox.haven.test", displayName: "Haven Inbox", status: "ACTIVE", eligibility: "FREE", weight: 65, mxOk: true },
     { domain: "quick.haven.test", displayName: "Haven Quick", status: "ACTIVE", eligibility: "FREE", weight: 60, mxOk: true },
+
+    // Professional .com domains (FREE tier) - realistic temp mail style (like temp-mail.org)
+    { domain: "playboot.com", displayName: "Playboot", status: "ACTIVE", eligibility: "FREE", weight: 130, mxOk: true },
+    { domain: "inboxhub.com", displayName: "InboxHub", status: "ACTIVE", eligibility: "FREE", weight: 120, mxOk: true },
+    { domain: "maildrop.com", displayName: "MailDrop", status: "ACTIVE", eligibility: "FREE", weight: 115, mxOk: true },
+    { domain: "tempinbox.com", displayName: "TempInbox", status: "ACTIVE", eligibility: "FREE", weight: 110, mxOk: true },
+    { domain: "quickmail.com", displayName: "QuickMail", status: "ACTIVE", eligibility: "FREE", weight: 105, mxOk: true },
+    { domain: "disposablemail.com", displayName: "DisposableMail", status: "ACTIVE", eligibility: "FREE", weight: 100, mxOk: true },
+
+    // Premium domains
     { domain: "pro.haven.test", displayName: "Haven Pro", status: "ACTIVE", eligibility: "PREMIUM_ONLY", weight: 40, mxOk: true },
     { domain: "corp.haven.test", displayName: "Haven Business", status: "ACTIVE", eligibility: "BUSINESS_ONLY", weight: 20, mxOk: true },
   ];
